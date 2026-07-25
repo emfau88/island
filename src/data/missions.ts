@@ -1,0 +1,276 @@
+import type { MissionDefinition } from "../core/types";
+
+export const MISSIONS: MissionDefinition[] = [
+  {
+    id: "lola-cocktail-01",
+    characterId: "lola",
+    title: "Cocktail-Kurier",
+    summary: "Lola samt Spezial-Cocktail vom Pool zum Yacht-Dock bringen.",
+    startLocation: "pool",
+    destination: "yacht",
+    requirements: {
+      requiredFlags: [],
+      forbiddenFlags: ["lola_cocktail_complete"],
+    },
+    routeIds: ["pool-yacht-coast", "pool-yacht-service"],
+    pickupPrompt: "Da bist du ja. Was hast du für mich?",
+    pickupChoices: [
+      {
+        id: "cocktail-ready",
+        label: "Cocktail kalt. Wagen bereit.",
+        hint: "Zuverlässig",
+        reaction: "positive",
+        effects: { trust: 4, mood: 3 },
+      },
+      {
+        id: "special-delivery",
+        label: "Eine besondere Lieferung – mit Chauffeur.",
+        hint: "Charmant",
+        reaction: "flirty",
+        effects: { attraction: 5, mood: 2 },
+      },
+      {
+        id: "why-no-service",
+        label: "Warum auf keinen Fall der Serviceweg?",
+        hint: "Neugierig",
+        reaction: "serious",
+        effects: { trust: 2, mood: -1 },
+      },
+    ],
+    travelPrompt: "Was ist dein Lieblingsplatz auf dieser Insel?",
+    travelChoices: [
+      {
+        id: "viewpoint",
+        label: "Der Aussichtspunkt.",
+        hint: "Aufmerksam",
+        reaction: "positive",
+        effects: { attraction: 4, mood: 3 },
+      },
+      {
+        id: "secret-beach",
+        label: "Der Secret Beach.",
+        hint: "Vertraulich",
+        reaction: "flirty",
+        effects: { trust: 3, attraction: 2 },
+      },
+      {
+        id: "afterparties",
+        label: "Ehrlich? Die Afterpartys.",
+        hint: "Mutig",
+        reaction: "surprised",
+        effects: { heat: 2, attraction: 3 },
+      },
+    ],
+    encounterPrompt: "Du bist wirklich schnell. Gefällt mir. Was nun?",
+    encounterChoices: [
+      {
+        id: "stay-a-while",
+        label: "Cocktail übergeben und ein bisschen bleiben.",
+        hint: "Nähe",
+        reaction: "flirty",
+        effects: { attraction: 7, mood: 4, heat: 1 },
+      },
+      {
+        id: "direct-return",
+        label: "Cocktail übergeben und diskret zurück.",
+        hint: "Verlässlich",
+        reaction: "positive",
+        effects: { trust: 6, attraction: 1 },
+      },
+      {
+        id: "ask-yacht",
+        label: "Nach der nächsten Yacht-Runde fragen.",
+        hint: "Selbstbewusst",
+        reaction: "surprised",
+        effects: { attraction: 4, heat: 3, mood: 2 },
+      },
+    ],
+    rewards: { cash: 2_500, fans: 250, heat: 5 },
+    completionFlags: ["lola_cocktail_complete"],
+    followUpMessageId: "lola-after-cocktail",
+  },
+  {
+    id: "lola-ice-02",
+    characterId: "lola",
+    title: "Mitternachts-Eis",
+    summary: "Vom Yacht-Dock zurück zum Pool – bevor die Drinks warm werden.",
+    startLocation: "yacht",
+    destination: "pool",
+    requirements: {
+      requiredFlags: ["lola_cocktail_complete"],
+      forbiddenFlags: ["lola_ice_complete"],
+    },
+    routeIds: ["yacht-pool-coast", "yacht-pool-service"],
+    pickupPrompt: "Das Eis wartet. Meine Geduld eher nicht.",
+    pickupChoices: [
+      {
+        id: "cooler-ready",
+        label: "Kühlbox steht schon im Wagen.",
+        hint: "Vorausschauend",
+        reaction: "positive",
+        effects: { trust: 5, mood: 3 },
+      },
+      {
+        id: "no-melting",
+        label: "Bei mir schmilzt heute gar nichts.",
+        hint: "Locker",
+        reaction: "flirty",
+        effects: { attraction: 4, mood: 2 },
+      },
+      {
+        id: "deadline",
+        label: "Wie knapp ist das Zeitfenster wirklich?",
+        hint: "Präzise",
+        reaction: "serious",
+        effects: { trust: 3, mood: -1 },
+      },
+    ],
+    travelPrompt: "Musik oder maximale Konzentration?",
+    travelChoices: [
+      {
+        id: "her-playlist",
+        label: "Deine Playlist. Du bestimmst.",
+        hint: "Aufmerksam",
+        reaction: "positive",
+        effects: { attraction: 3, mood: 4 },
+      },
+      {
+        id: "quiet-drive",
+        label: "Ruhe. Wir schlagen die Uhr.",
+        hint: "Fokussiert",
+        reaction: "serious",
+        effects: { trust: 4, mood: 1 },
+      },
+      {
+        id: "service-bet",
+        label: "Serviceweg. Ich wette, das Eis gewinnt.",
+        hint: "Riskant",
+        reaction: "surprised",
+        effects: { heat: 3, attraction: 3, trust: -1 },
+      },
+    ],
+    encounterPrompt: "Noch gefroren. Ich bin beeindruckt – ein bisschen.",
+    encounterChoices: [
+      {
+        id: "take-credit",
+        label: "Ich nehme das Kompliment trotzdem.",
+        hint: "Selbstbewusst",
+        reaction: "flirty",
+        effects: { attraction: 5, mood: 3 },
+      },
+      {
+        id: "check-cooler",
+        label: "Erst prüfen, dann feiern.",
+        hint: "Zuverlässig",
+        reaction: "positive",
+        effects: { trust: 6, mood: 1 },
+      },
+      {
+        id: "ask-tip",
+        label: "Und wie sieht beeindrucktes Trinkgeld aus?",
+        hint: "Frech",
+        reaction: "surprised",
+        effects: { cash: 300, attraction: 2, heat: 2 },
+      },
+    ],
+    rewards: { cash: 1_800, fans: 180, heat: 3 },
+    completionFlags: ["lola_ice_complete"],
+    followUpMessageId: "lola-after-ice",
+  },
+  {
+    id: "lola-playlist-03",
+    characterId: "lola",
+    title: "Die private Playlist",
+    summary: "Lolas Telefon vom Pool holen und persönlich ans Yacht-Dock bringen.",
+    startLocation: "pool",
+    destination: "yacht",
+    requirements: {
+      requiredFlags: ["lola_ice_complete"],
+      forbiddenFlags: ["lola_playlist_complete"],
+    },
+    routeIds: ["pool-yacht-coast", "pool-yacht-service"],
+    pickupPrompt: "Das ist nicht irgendein Telefon. Keine neugierigen Finger.",
+    pickupChoices: [
+      {
+        id: "sealed-pouch",
+        label: "Es bleibt versiegelt bis zur Übergabe.",
+        hint: "Diskret",
+        reaction: "positive",
+        effects: { trust: 7, mood: 2 },
+      },
+      {
+        id: "taste-question",
+        label: "Ich beurteile nur deinen Musikgeschmack.",
+        hint: "Frech",
+        reaction: "flirty",
+        effects: { attraction: 4, mood: 3 },
+      },
+      {
+        id: "notifications",
+        label: "Benachrichtigungen sind bereits stumm.",
+        hint: "Professionell",
+        reaction: "surprised",
+        effects: { trust: 5, attraction: 1 },
+      },
+    ],
+    travelPrompt: "Eine Nachricht blinkt auf. Du hast nichts gesehen, richtig?",
+    travelChoices: [
+      {
+        id: "eyes-road",
+        label: "Meine Augen sind auf der Straße.",
+        hint: "Diskret",
+        reaction: "positive",
+        effects: { trust: 6, mood: 2 },
+      },
+      {
+        id: "only-name",
+        label: "Nur den Namen. Mehr nicht.",
+        hint: "Ehrlich",
+        reaction: "serious",
+        effects: { trust: 2, mood: -1 },
+      },
+      {
+        id: "tease-secret",
+        label: "Dein Geheimnis klingt nach guter Musik.",
+        hint: "Riskant",
+        reaction: "annoyed",
+        effects: { trust: -4, attraction: 2, heat: 3 },
+      },
+    ],
+    encounterPrompt: "Alles noch versiegelt. Vielleicht kann ich dir wirklich vertrauen.",
+    encounterChoices: [
+      {
+        id: "trust-matters",
+        label: "Vertrauen ist mehr wert als Neugier.",
+        hint: "Verlässlich",
+        reaction: "positive",
+        effects: { trust: 8, attraction: 2 },
+      },
+      {
+        id: "favorite-runner",
+        label: "Dann sag es: Lieblings-Runner.",
+        hint: "Charmant",
+        reaction: "flirty",
+        effects: { attraction: 7, mood: 4 },
+      },
+      {
+        id: "one-track",
+        label: "Ein Song als Trinkgeld reicht.",
+        hint: "Spielerisch",
+        reaction: "surprised",
+        effects: { attraction: 4, trust: 3, fans: 100 },
+      },
+    ],
+    rewards: { cash: 3_200, fans: 350, heat: 4 },
+    completionFlags: ["lola_playlist_complete"],
+    followUpMessageId: "lola-after-playlist",
+  },
+];
+
+export function getMission(id: string): MissionDefinition {
+  const mission = MISSIONS.find((candidate) => candidate.id === id);
+  if (!mission) {
+    throw new Error(`Unknown mission: ${id}`);
+  }
+  return mission;
+}

@@ -1,0 +1,101 @@
+[
+  {
+    "id": "world-island-night",
+    "file": "public/assets/world/island-night.webp",
+    "width": 2048,
+    "height": 3072,
+    "mode": "RGB",
+    "alpha": false,
+    "sha256": "91c58b88f9d43e96a5b7ac5dc33f3413f3f540736586fb3816435e62626eeaa8"
+  },
+  {
+    "id": "pool-night",
+    "file": "public/assets/locations/pool/pool-night.webp",
+    "width": 1536,
+    "height": 2048,
+    "mode": "RGB",
+    "alpha": false,
+    "sha256": "810a101bd62c881390062b705e688271a37e3bfe4b8376dfb1ef9308a7868564"
+  },
+  {
+    "id": "yacht-dock-night",
+    "file": "public/assets/locations/yacht/yacht-dock-night.webp",
+    "width": 1536,
+    "height": 2048,
+    "mode": "RGB",
+    "alpha": false,
+    "sha256": "e89db5aa8e8670e23e6c37778d129a40c2755f0f670dea7e10d2398a4932d1ad"
+  },
+  {
+    "id": "lola-neutral",
+    "file": "public/assets/characters/lola/lola-neutral.png",
+    "width": 1536,
+    "height": 2048,
+    "mode": "RGBA",
+    "alpha": true,
+    "sha256": "681cde351775384db27b60924117bf283d19af547dbc801fd65b3450732ed753"
+  },
+  {
+    "id": "lola-positive",
+    "file": "public/assets/characters/lola/lola-positive.png",
+    "width": 1536,
+    "height": 2048,
+    "mode": "RGBA",
+    "alpha": true,
+    "sha256": "f08bd94ab80527fc111f3a593cde4a77ce96069ef4ea5cb241564a400f12968b"
+  },
+  {
+    "id": "lola-flirty",
+    "file": "public/assets/characters/lola/lola-flirty.png",
+    "width": 1536,
+    "height": 2048,
+    "mode": "RGBA",
+    "alpha": true,
+    "sha256": "778d6a01bfe1b988154c497fd0cf61345cf086c250d6aca5d4be256d5ef3bdde"
+  },
+  {
+    "id": "lola-serious",
+    "file": "public/assets/characters/lola/lola-serious.png",
+    "width": 1536,
+    "height": 2048,
+    "mode": "RGBA",
+    "alpha": true,
+    "sha256": "380bde64ad616381a6f5c2e75cbddbb453069bc81865975f205bea93e6b51b8a"
+  },
+  {
+    "id": "lola-annoyed",
+    "file": "public/assets/characters/lola/lola-annoyed.png",
+    "width": 1536,
+    "height": 2048,
+    "mode": "RGBA",
+    "alpha": true,
+    "sha256": "aa000801fa473f7808af1e533ccb3e42115cfc7226a112ad574627166c61a17a"
+  },
+  {
+    "id": "lola-surprised",
+    "file": "public/assets/characters/lola/lola-surprised.png",
+    "width": 1536,
+    "height": 2048,
+    "mode": "RGBA",
+    "alpha": true,
+    "sha256": "468737a1049d8fe7faff60723fb9d7dcc77527699de9021af0f5724af9c10858"
+  },
+  {
+    "id": "lola-portrait",
+    "file": "public/assets/characters/lola/lola-portrait.webp",
+    "width": 768,
+    "height": 768,
+    "mode": "RGB",
+    "alpha": false,
+    "sha256": "65831b404f66713ce355f22d513609159d4ae9e0ad75b5b4d1f8cd24babbc163"
+  },
+  {
+    "id": "runner-car",
+    "file": "public/assets/vehicles/runner-car.png",
+    "width": 768,
+    "height": 768,
+    "mode": "RGBA",
+    "alpha": true,
+    "sha256": "620894facba8af73ed746aca6d9edf90f7690232fa16413eb9a576c14fddef04"
+  }
+]
