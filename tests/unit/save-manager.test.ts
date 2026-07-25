@@ -46,11 +46,11 @@ describe("SaveManager", () => {
     storage.setItem("island-runner-save", "{broken");
     const manager = new SaveManager(storage);
 
-    expect(manager.load().version).toBe(1);
+    expect(manager.load().version).toBe(2);
     expect(manager.load().resources.cash).toBe(0);
 
     storage.setItem("island-runner-save", JSON.stringify({ version: 99 }));
-    expect(manager.load().version).toBe(1);
+    expect(manager.load().version).toBe(2);
   });
 
   it("clamps externally modified values and rejects malformed active runs", () => {
@@ -75,5 +75,25 @@ describe("SaveManager", () => {
 
     expect(once.messages.map((message) => message.id)).toContain("lola-after-cocktail");
     expect(twice.messages.filter((message) => message.id === "lola-after-cocktail")).toHaveLength(1);
+  });
+
+  it("migrates legacy progress without replaying completed onboarding", () => {
+    const state = createInitialSave(10);
+    const legacy = {
+      ...state,
+      version: 1,
+      missionStyles: undefined,
+      settings: undefined,
+      flags: ["lola_cocktail_complete"],
+      completedMissions: ["lola-cocktail-01"],
+    };
+    const migrated = validateSave(legacy);
+
+    expect(migrated?.version).toBe(2);
+    expect(migrated?.flags).toContain("onboarding_complete");
+    expect(migrated?.messages.find((message) => message.id === "lola-intro")?.replyId).toBe(
+      "intro-reliable",
+    );
+    expect(migrated?.settings).toEqual({ sound: true, haptics: true });
   });
 });

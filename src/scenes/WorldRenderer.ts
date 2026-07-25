@@ -80,6 +80,9 @@ export class WorldRenderer {
   private currentPoint: Point = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 };
   private tickerHandler: ((ticker: Ticker) => void) | null = null;
   private skipTravel: (() => void) | null = null;
+  private routePaused = false;
+  private pausedAt = 0;
+  private totalPaused = 0;
 
   public constructor(private readonly host: HTMLElement) {
     this.resizeObserver = new ResizeObserver(() => this.layout());
@@ -132,6 +135,15 @@ export class WorldRenderer {
     }
     const started = performance.now();
     let finished = false;
+    this.routePaused = false;
+    this.pausedAt = 0;
+    this.totalPaused = 0;
+    const initial = samplePath(route.points, 0);
+    this.currentPoint = initial.point;
+    this.car.position.set(initial.point.x, initial.point.y);
+    this.car.rotation = initial.heading + Math.PI / 2;
+    this.carShadow.position.set(initial.point.x + 14, initial.point.y + 24);
+    this.carShadow.rotation = initial.heading + Math.PI / 2;
     const finish = () => {
       if (finished) {
         return;
@@ -141,12 +153,16 @@ export class WorldRenderer {
         this.app.ticker.remove(this.tickerHandler);
         this.tickerHandler = null;
       }
+      this.routePaused = false;
       onProgress(1);
       onDone();
     };
     this.skipTravel = finish;
     this.tickerHandler = () => {
-      const linear = Math.min(1, (performance.now() - started) / route.durationMs);
+      if (this.routePaused) {
+        return;
+      }
+      const linear = Math.min(1, (performance.now() - started - this.totalPaused) / route.durationMs);
       const eased = linear * linear * (3 - 2 * linear);
       const sample = samplePath(route.points, eased);
       this.currentPoint = sample.point;
@@ -165,6 +181,19 @@ export class WorldRenderer {
       }
     };
     this.app.ticker.add(this.tickerHandler);
+  }
+
+  public pause(): void {
+    if (this.routePaused || !this.tickerHandler) return;
+    this.routePaused = true;
+    this.pausedAt = performance.now();
+  }
+
+  public resume(): void {
+    if (!this.routePaused || !this.tickerHandler) return;
+    this.totalPaused += performance.now() - this.pausedAt;
+    this.pausedAt = 0;
+    this.routePaused = false;
   }
 
   public skip(): void {

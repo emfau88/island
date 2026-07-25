@@ -5,9 +5,12 @@ import {
   addEffects,
   clamp,
   type Choice,
+  type EffectLogEntry,
   type MissionDefinition,
+  type MissionResult,
   type SaveState,
 } from "../core/types";
+import { getHeatTier, getRelationshipTier, runnerStyle } from "./ProgressionSystem";
 
 function unique(items: string[]): string[] {
   return [...new Set(items)];
@@ -51,6 +54,7 @@ export class MissionSystem {
         missionId,
         phase: "pickup",
         pendingEffects: { ...ZERO_EFFECTS },
+        effectLog: [],
         currentReaction: "neutral",
         startedAt: now,
       },
@@ -72,6 +76,10 @@ export class MissionSystem {
         selectedPickupChoice: choice.id,
         currentReaction: choice.reaction,
         pendingEffects: addEffects(run.pendingEffects, choice.effects),
+        effectLog: [
+          ...run.effectLog,
+          { source: "pickup", label: choice.label, effects: choice.effects },
+        ],
       },
     };
   }
@@ -93,6 +101,10 @@ export class MissionSystem {
         phase: "travel",
         selectedRoute: route.id,
         pendingEffects: addEffects(run.pendingEffects, route.effects),
+        effectLog: [
+          ...run.effectLog,
+          { source: "route", label: route.label, effects: route.effects },
+        ],
       },
     };
   }
@@ -103,7 +115,7 @@ export class MissionSystem {
       return state;
     }
     const mission = getMission(run.missionId);
-    const choice = choiceById(mission.travelChoices, choiceId);
+    const choice = choiceById(mission.travelEvent.choices, choiceId);
     return {
       ...state,
       activeMission: {
@@ -111,6 +123,10 @@ export class MissionSystem {
         selectedTravelChoice: choice.id,
         currentReaction: choice.reaction,
         pendingEffects: addEffects(run.pendingEffects, choice.effects),
+        effectLog: [
+          ...run.effectLog,
+          { source: "travel", label: choice.label, effects: choice.effects },
+        ],
       },
     };
   }
@@ -127,18 +143,47 @@ export class MissionSystem {
   }
 
   public complete(state: SaveState, choiceId: string, now = Date.now()): SaveState {
+    return this.completeWithResult(state, choiceId, now).state;
+  }
+
+  public completeWithResult(state: SaveState, choiceId: string, now = Date.now()): MissionResult {
     const run = this.requireRun(state, "encounter");
     if (run.selectedEncounterChoice) {
-      return state;
+      throw new Error("Mission encounter was already completed.");
     }
     const mission = getMission(run.missionId);
     const choice = choiceById(mission.encounterChoices, choiceId);
-    const allEffects = addEffects(addEffects(run.pendingEffects, choice.effects), mission.rewards);
+    const entries: EffectLogEntry[] = [
+      ...run.effectLog,
+      { source: "encounter", label: choice.label, effects: choice.effects },
+      { source: "reward", label: "Grundbelohnung", effects: mission.rewards },
+    ];
+    let allEffects = addEffects(addEffects(run.pendingEffects, choice.effects), mission.rewards);
+    const projectedHeat = clamp(state.resources.heat + allEffects.heat);
+    const heatTier = getHeatTier(projectedHeat);
+    const grossCash = Math.max(0, allEffects.cash);
+    const heatPenalty = Math.round(grossCash * heatTier.payoutPenalty);
+    const relationshipTier = getRelationshipTier(state.relationships.lola);
+    const relationshipBonusFans = Math.round(Math.max(0, allEffects.fans) * relationshipTier.fanBonus);
+    if (heatPenalty > 0) {
+      const penalty = { cash: -heatPenalty };
+      allEffects = addEffects(allEffects, penalty);
+      entries.push({ source: "system", label: `${heatTier.label}: Heat-Abzug`, effects: penalty });
+    }
+    if (relationshipBonusFans > 0) {
+      const bonus = { fans: relationshipBonusFans };
+      allEffects = addEffects(allEffects, bonus);
+      entries.push({
+        source: "system",
+        label: `${relationshipTier.label}: Beziehungsbonus`,
+        effects: bonus,
+      });
+    }
     const messages = state.messages.some((message) => message.id === mission.followUpMessageId)
       ? state.messages
       : [...state.messages, { id: mission.followUpMessageId, read: false, unlockedAt: now }];
-
-    return {
+    const style = runnerStyle(allEffects.attraction, allEffects.trust, allEffects.heat);
+    const nextState: SaveState = {
       ...state,
       resources: {
         cash: Math.max(0, state.resources.cash + allEffects.cash),
@@ -154,9 +199,21 @@ export class MissionSystem {
       },
       flags: unique([...state.flags, ...mission.completionFlags]),
       completedMissions: unique([...state.completedMissions, mission.id]),
+      missionStyles: {
+        ...state.missionStyles,
+        [mission.id]: style,
+      },
       messages,
       activeMission: null,
       lastDecision: choice.label,
+    };
+    return {
+      state: nextState,
+      entries,
+      totalEffects: allEffects,
+      style,
+      heatPenalty,
+      relationshipBonusFans,
     };
   }
 

@@ -10,12 +10,13 @@ Erwachsene Spieler, die kurze mobile Sessions, attraktive Figuren, sichtbare Ent
 
 ## Kernloop
 
-1. Auftrag im Smartphone oder auf der Inselkarte wählen.
-2. Auftraggeberin treffen und auf sie reagieren.
-3. Eine automatische Route mit nachvollziehbaren Vor- und Nachteilen wählen.
-4. Unterwegs optional ein kurzes Gespräch führen.
-5. Am Ziel eine Abschlussentscheidung treffen.
-6. Belohnungen, Beziehungen, Heat und Folge-Nachrichten erleben.
+1. Nachricht im Ingame-Smartphone beantworten.
+2. freigeschalteten Treffpunkt in der Inselwelt aufsuchen.
+3. Auftraggeberin treffen und auf sie reagieren.
+4. eine Route mit nachvollziehbaren Vor- und Nachteilen wählen.
+5. ein konkretes, pausierendes Fahrtereignis lösen.
+6. am Ziel entscheiden und die Ursachen des Ergebnisses sehen.
+7. auf die Folge-Nachricht reagieren und damit den nächsten Loop verändern.
 
 ## Nicht-Ziele
 

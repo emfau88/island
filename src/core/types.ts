@@ -1,4 +1,4 @@
-export type SceneId = "hub" | "phone" | "pickup" | "route" | "travel" | "encounter";
+export type SceneId = "hub" | "pickup" | "route" | "travel" | "encounter";
 export type PhoneTab = "jobs" | "messages" | "contacts";
 export type MissionPhase = "pickup" | "route" | "travel" | "encounter";
 export type Reaction = "neutral" | "positive" | "flirty" | "serious" | "annoyed" | "surprised";
@@ -34,6 +34,8 @@ export interface RouteDefinition {
   to: LocationId;
   durationMs: number;
   tags: string[];
+  advantage: string;
+  risk: string;
   effects: Partial<Effects>;
   points: Point[];
 }
@@ -54,9 +56,14 @@ export interface MissionDefinition {
   routeIds: [string, string];
   pickupPrompt: string;
   pickupChoices: Choice[];
-  travelPrompt: string;
-  travelChoices: Choice[];
+  travelEvent: {
+    title: string;
+    prompt: string;
+    triggerProgress: number;
+    choices: Choice[];
+  };
   encounterPrompt: string;
+  arrivalPrompts?: Record<string, string>;
   encounterChoices: Choice[];
   rewards: Partial<Effects>;
   completionFlags: string[];
@@ -83,27 +90,49 @@ export interface ActiveMissionRun {
   selectedTravelChoice?: string;
   selectedEncounterChoice?: string;
   pendingEffects: Effects;
+  effectLog: EffectLogEntry[];
   currentReaction: Reaction;
   startedAt: number;
+}
+
+export interface EffectLogEntry {
+  source: "pickup" | "route" | "travel" | "encounter" | "reward" | "system";
+  label: string;
+  effects: Partial<Effects>;
 }
 
 export interface MessageState {
   id: string;
   read: boolean;
   unlockedAt: number;
+  replyId?: string;
 }
 
 export interface SaveState {
-  version: 1;
+  version: 2;
   resources: ResourceState;
   relationships: {
     lola: RelationshipState;
   };
   flags: string[];
   completedMissions: string[];
+  missionStyles: Record<string, string>;
   messages: MessageState[];
   activeMission: ActiveMissionRun | null;
   lastDecision: string | null;
+  settings: {
+    sound: boolean;
+    haptics: boolean;
+  };
+}
+
+export interface MessageReply {
+  id: string;
+  label: string;
+  hint: string;
+  effects: Partial<Effects>;
+  flags: string[];
+  response: string[];
 }
 
 export interface MessageDefinition {
@@ -112,6 +141,16 @@ export interface MessageDefinition {
   preview: string;
   body: string[];
   requiredFlags: string[];
+  replies: MessageReply[];
+}
+
+export interface MissionResult {
+  state: SaveState;
+  entries: EffectLogEntry[];
+  totalEffects: Effects;
+  style: string;
+  heatPenalty: number;
+  relationshipBonusFans: number;
 }
 
 export interface LocationDefinition {

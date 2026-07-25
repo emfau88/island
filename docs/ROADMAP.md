@@ -2,22 +2,29 @@
 
 ## Phase 1 – Lola-Vertical-Slice
 
-1. Produktionsplanung und Asset-Manifest
-2. HUD-freie Insel-, Pool- und Yacht-Assets
-3. sechs konsistente Lola-Reaktionen und Fahrzeug
-4. drei datengetriebene Lola-Missionen
-5. Save-/Reload- und Progressionstests
-6. Mobile-E2E-Screenshots und GitHub Pages
+- [x] gemeinsame Inselwelt, Pool und Yacht-Dock
+- [x] sechs Lola-Reaktionen und Fahrzeug
+- [x] drei datengetriebene Missionen
+- [x] Save-/Reload- und Progressionstests
+- [x] GitHub Pages
+
+## Phase 1.1 – World-first UX
+
+- [x] Smartphone als echtes Ingame-Overlay
+- [x] spielbares Nachrichten-Onboarding
+- [x] beantwortbare Chats mit Konsequenzen
+- [x] pausierende, missionsbezogene Fahrtereignisse
+- [x] verständliche Routen-Trade-offs
+- [x] Heat-Stufen, Beziehungstiers und Ergebnisursachen
+- [x] reaktive Folgezeilen und Runner-Stile
 
 ## Phase 2 – MVP
 
-Erst nach bestandenem Lola-Gate:
-
 - Mia und Kylie
 - Bar, Club, Villa und Dock als Begegnungsorte
-- mindestens sechs vollständige Missionen
-- zusätzliche Nachrichten und echte Folgeeffekte
+- mindestens sechs weitere Missionen
+- zusätzliche Smartphone-Apps
+- größere verzweigte Nachrichtenketten
+- Audio-Asset-Paket statt prozeduraler UI-Töne
 
-## Später
-
-Neue Figuren, Locations oder Systeme nur, wenn sie einen klaren Platz im Kernloop besitzen.
+Neue Figuren, Locations oder Systeme werden nur ergänzt, wenn sie einen klaren Platz im Kernloop besitzen.

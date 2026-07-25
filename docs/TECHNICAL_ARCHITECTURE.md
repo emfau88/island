@@ -4,21 +4,29 @@
 
 Vite, TypeScript, PixiJS 8, HTML/CSS, Vitest und Playwright. Es gibt kein Backend.
 
-## Szenen
+## Ebenen
 
-`Game` orchestriert sechs Zustände: `hub`, `phone`, `pickup`, `route`, `travel` und `encounter`. Die DOM-Schicht rendert HUD und Interaktion; `WorldRenderer` verwaltet die PixiJS-Welt.
+`Game` orchestriert fünf Weltzustände: `hub`, `pickup`, `route`, `travel` und `encounter`. Der Hub und die Fahrten bleiben echte PixiJS-Weltszenen.
 
-## State Machine
+Das Smartphone ist kein State der Szenenmaschine. Es wird als unabhängiger DOM-Dialog über der bestehenden Welt geöffnet, aktualisiert und geschlossen. Dadurch bleiben Ort, Karte und visueller Kontext erhalten.
 
-Nur explizit erlaubte Übergänge sind möglich. Ein aktiver Missionslauf hält Phase, Entscheidungen, ausstehende Effekte und aktuelle Reaktion. Nach jedem Schritt wird gespeichert.
+## Spielsysteme
+
+- `MissionSystem`: Transaktionen, Effektprotokoll, Routen, Abschluss und Heat-/Beziehungsboni
+- `MessageSystem`: einmalige Antworten, Konsequenzen, Story-Flags und Missionsfreischaltung
+- `ProgressionSystem`: Heat-Stufen, Beziehungstiers, Boni und Runner-Stil
+- `FeedbackSystem`: optionaler Sound und Haptik
+- `WorldRenderer`: Karte, Routen, Fahrzeug, Kamera sowie pausierbare Fahrten
 
 ## Speicherstand
 
-Schema-Version 1 wird validiert geladen. Ungültige oder inkompatible Daten werden sicher auf einen definierten Initialzustand zurückgesetzt. Permanente Effekte werden erst bei Abschluss aus `pendingEffects` übernommen.
+Schema-Version 2 speichert Nachrichtenauswahl, Einstellungen, Missionsstile und kausale Effektprotokolle. Version-1-Spielstände werden migriert. Ungültige Daten fallen sicher auf einen definierten Initialzustand zurück.
+
+Missionswerte bleiben bis zum Abschluss in `pendingEffects`. Erst eine gültige Abschlusswahl verbucht Ressourcen und Beziehungen atomar. Nachrichtenantworten sind ebenfalls idempotent.
 
 ## Koordinatensystem
 
-Die Welt besitzt 2048 × 3072 Einheiten. Kartenbild, Pins, Route und Fahrzeug liegen im selben PixiJS-Container. Der Container wird einmalig in den verfügbaren Viewport eingepasst; während der Fahrt folgt die Kamera demselben Container.
+Die Welt besitzt 2048 × 3072 Einheiten. Kartenbild, Pins, Routen und Fahrzeug liegen im selben PixiJS-Container. Während der Fahrt folgt die Kamera dem Fahrzeug. Ein Missionsereignis kann die Route pausieren, ohne Zeitfortschritt zu verlieren.
 
 ## Sicherheit
 

@@ -13,8 +13,8 @@ Selbstbewusst, spielerisch, leicht satirisch und erwachsen. Lola spricht direkt,
 
 ## Missionen
 
-- jede Mission benötigt Anlass, Abholung, Route, Fahrtinteraktion, Begegnung und Folge-Nachricht
-- jede gesetzte Story-Flag muss später geprüft werden
+- jede Mission benötigt Anlass, Abholung, Route, konkretes Fahrtereignis, Begegnung und beantwortbare Folge-Nachricht
+- Story-Flags verändern spätere Formulierungen, Freischaltungen oder den Abschlusszustand
 - positive und negative Antworten lösen echte unterschiedliche Posen aus
 - keine Paparazzi-, Shitstorm-, Livestream- oder Sponsor-Zufallsevents
 

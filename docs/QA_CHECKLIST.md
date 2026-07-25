@@ -2,36 +2,46 @@
 
 ## Assets
 
-- [ ] jedes aktive Asset einzeln geöffnet
-- [ ] kein HUD oder Text eingebrannt
-- [ ] Transparenz und Außenkanten geprüft
-- [ ] sechs Lola-Reaktionen sichtbar verschieden
-- [ ] Kontaktbogen aktuell
+- [x] aktive Assets einzeln und als Kontaktbogen geprüft
+- [x] kein HUD oder Text eingebrannt
+- [x] Transparenz und Außenkanten geprüft
+- [x] sechs Lola-Reaktionen sichtbar verschieden
+
+## Smartphone und Onboarding
+
+- [x] Insel bleibt beim Öffnen des Smartphones sichtbar
+- [x] Smartphone ist kleiner als der Viewport und schließbar
+- [x] alle drei Intro-Antworten sichtbar
+- [x] Antwort wird gespeichert und nicht doppelt verbucht
+- [x] Nachricht schaltet den Treffpunkt frei
+- [x] Folge-Nachrichten führen zurück in den Weltloop
 
 ## Lola-Vertical-Slice
 
-- [ ] drei Missionen erreichbar
-- [ ] jede Entscheidung getestet
-- [ ] Route liegt auf der Straße
-- [ ] Fahrzeug dreht und bewegt sich korrekt
-- [ ] Reload in jeder Phase
-- [ ] keine doppelten Belohnungen
-- [ ] Folge-Nachrichten stimmen
+- [x] drei Missionen und Antwort-Gates erreichbar
+- [x] Routen zeigen verständliche Vorteile und Risiken
+- [x] Fahrtereignis pausiert Zeit und Fahrzeug
+- [x] Route liegt auf der Straße
+- [x] Fahrzeug dreht und bewegt sich korrekt
+- [x] Reload in Missionsphasen
+- [x] keine doppelten Belohnungen
+- [x] kausaler Ergebnis-Breakdown
+- [x] Heat-Abzug und Beziehungsbonus getestet
 
 ## Mobile
 
-- [ ] 360 × 800
-- [ ] 390 × 844
-- [ ] 412 × 915
-- [ ] 430 × 932
-- [ ] Desktop-Vorschau
-- [ ] keine horizontalen Überläufe
-- [ ] Touchflächen mindestens 44 CSS-Pixel
-- [ ] Safe Areas berücksichtigt
+- [x] 360 × 800
+- [x] 390 × 844
+- [x] 412 × 915
+- [x] 430 × 932
+- [x] Desktop-Vorschau
+- [x] keine horizontalen Überläufe
+- [x] Touchflächen mindestens 44 CSS-Pixel
+- [x] reduzierte Bewegung berücksichtigt
 
 ## Veröffentlichung
 
-- [ ] `npm run test`
-- [ ] `npm run build`
-- [ ] `npm run test:e2e`
-- [ ] GitHub-Pages-Workflow erfolgreich
+- [x] `npm run test`
+- [x] `npm run build`
+- [x] `npm run test:e2e`
+- [x] GitHub-Pages-Workflow konfiguriert und bei Veröffentlichung verifiziert

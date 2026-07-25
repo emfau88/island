@@ -1,30 +1,31 @@
 # Game Design
 
-## Missionslänge
+## Kernloop
 
-Eine Mission dauert ungefähr ein bis drei Minuten. Die Fahrt verbindet die Locations sichtbar, ist aber kein zweites Kernspiel.
-
-## Beziehungen
-
-Lola besitzt langfristige Werte für Anziehung und Vertrauen sowie eine missionsbezogene Stimmung. Jeder Wert wird auf 0 bis 100 begrenzt. Entscheidungen tragen verständliche Konsequenzsymbole, die tatsächlichen Werte werden beim gültigen Missionsabschluss atomar verbucht.
-
-## Fahrt
-
-Jede Mission bietet eine sichere, stimmungsvolle Küstenroute und einen schnelleren, riskanteren Serviceweg. Ein Fahrzeug bewegt sich fünf bis zehn Sekunden entlang einer Route im gemeinsamen Weltkoordinatensystem. Eine kurze Fahrtinteraktion verändert die noch ausstehenden Missionseffekte.
+1. Nachricht erhalten und im Smartphone beantworten
+2. freigeschalteten Treffpunkt auf der Insel aufsuchen
+3. auf Lola reagieren
+4. zwischen zwei echten Routen-Trade-offs wählen
+5. ein missionsbezogenes, pausierendes Fahrtereignis lösen
+6. Begegnung am Ziel abschließen
+7. Ergebnisursachen, Beziehung und Folge-Nachricht sehen
 
 ## Smartphone
 
-Phase 1 enthält vier echte Bereiche:
+Die Insel ist das Spiel. Das Smartphone ist ein Ingame-Werkzeug wie in einem Open-World-Spiel. Es liegt als schließbares Overlay über der weiterhin sichtbaren Welt. Nachrichtenantworten sind Storyentscheidungen und keine reine Navigation.
 
-- Aufträge: verfügbare und abgeschlossene Missionen
-- Nachrichten: flag- und entscheidungsabhängige Chats
-- Kontakte: bekannte Beziehungswerte und letzte Entscheidung
-- Karte: Rückkehr zum Insel-Hub
+## Fahrt
 
-## Phase-1-Progression
+Die Fahrt ist kein zweites Geschicklichkeitsspiel. Routen verändern Zeit, Auszahlung, Fans, Heat und Beziehung. Während eines konkreten Ereignisses pausiert die Fahrt vollständig; Entscheidungen können nicht ablaufen.
 
-1. **Cocktail-Kurier** führt Pool und Yacht-Dock ein.
-2. **Mitternachts-Eis** wird nach der ersten erfolgreichen Lieferung freigeschaltet.
-3. **Die private Playlist** reagiert auf vorherige Entscheidungen und schließt den Slice ab.
+## Beziehungen
 
-Wenn keine neue Mission verfügbar ist, bleiben Nachrichten, Kontakte, Karte und wiederholbare freie Inselansicht erreichbar. Es gibt keinen Softlock.
+Anziehung und Vertrauen bilden die Stufen `Neu`, `Bekannt`, `Vertraut` und `VIP`. Höhere Stufen geben sichtbare Fan-Boni. Stimmung beschreibt Lolas aktuelle Reaktion.
+
+## Heat
+
+Heat besitzt die Stufen `Unauffällig`, `Beobachtet`, `Im Visier` und `Lockdown`. Ab 25 Heat sinkt die Missionsauszahlung. Ruhige Routen können Heat reduzieren; riskante Optionen können mehr Cash oder Fans erzeugen.
+
+## Progression
+
+Jede Folge-Mission benötigt neben dem vorherigen Abschluss eine beantwortete Nachricht. Antworten verändern die Formulierungen späterer Szenen und bleiben im Chatverlauf sichtbar. Es gibt keinen Softlock.

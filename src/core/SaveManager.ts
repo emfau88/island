@@ -4,6 +4,7 @@ import {
   ZERO_EFFECTS,
   clamp,
   type ActiveMissionRun,
+  type EffectLogEntry,
   type Effects,
   type MessageState,
   type Reaction,
@@ -13,6 +14,14 @@ import {
 const SAVE_KEY = "island-runner-save";
 const REACTIONS: Reaction[] = ["neutral", "positive", "flirty", "serious", "annoyed", "surprised"];
 const PHASES: ActiveMissionRun["phase"][] = ["pickup", "route", "travel", "encounter"];
+const EFFECT_SOURCES: EffectLogEntry["source"][] = [
+  "pickup",
+  "route",
+  "travel",
+  "encounter",
+  "reward",
+  "system",
+];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -43,6 +52,38 @@ function parseEffects(value: unknown): Effects | null {
     mood: finite(value.mood, Number.NaN),
   };
   return Object.values(parsed).every(Number.isFinite) ? parsed : null;
+}
+
+function parsePartialEffects(value: unknown): Partial<Effects> | null {
+  if (!isRecord(value)) return null;
+  const parsed: Partial<Effects> = {};
+  for (const key of Object.keys(ZERO_EFFECTS) as Array<keyof Effects>) {
+    if (value[key] === undefined) continue;
+    if (typeof value[key] !== "number" || !Number.isFinite(value[key])) return null;
+    parsed[key] = value[key];
+  }
+  return parsed;
+}
+
+function parseEffectLog(value: unknown): EffectLogEntry[] {
+  if (!Array.isArray(value)) return [];
+  const entries: EffectLogEntry[] = [];
+  for (const item of value) {
+    if (!isRecord(item)) continue;
+    const effects = parsePartialEffects(item.effects);
+    if (
+      typeof item.label === "string" &&
+      EFFECT_SOURCES.includes(item.source as EffectLogEntry["source"]) &&
+      effects
+    ) {
+      entries.push({
+        source: item.source as EffectLogEntry["source"],
+        label: item.label,
+        effects,
+      });
+    }
+  }
+  return entries;
 }
 
 function parseActiveMission(value: unknown): ActiveMissionRun | null | undefined {
@@ -79,6 +120,7 @@ function parseActiveMission(value: unknown): ActiveMissionRun | null | undefined
     selectedTravelChoice: optionalString(value.selectedTravelChoice),
     selectedEncounterChoice: optionalString(value.selectedEncounterChoice),
     pendingEffects,
+    effectLog: parseEffectLog(value.effectLog),
     currentReaction,
     startedAt,
   };
@@ -88,27 +130,76 @@ function parseMessages(value: unknown): MessageState[] {
   if (!Array.isArray(value)) {
     return [];
   }
-  const known = new Set(MESSAGES.map((message) => message.id));
+  const definitions = new Map(MESSAGES.map((message) => [message.id, message]));
   const parsed: MessageState[] = [];
   for (const item of value) {
+    if (!isRecord(item) || typeof item.id !== "string") continue;
+    const definition = definitions.get(item.id);
+    const replyId = optionalString(item.replyId);
     if (
-      isRecord(item) &&
-      typeof item.id === "string" &&
-      known.has(item.id) &&
+      definition &&
       typeof item.read === "boolean" &&
       typeof item.unlockedAt === "number" &&
       Number.isFinite(item.unlockedAt) &&
+      (!replyId || definition.replies.some((reply) => reply.id === replyId)) &&
       !parsed.some((message) => message.id === item.id)
     ) {
-      parsed.push({ id: item.id, read: item.read, unlockedAt: item.unlockedAt });
+      parsed.push({ id: item.id, read: item.read, unlockedAt: item.unlockedAt, replyId });
     }
   }
   return parsed;
 }
 
+function parseMissionStyles(value: unknown): Record<string, string> {
+  if (!isRecord(value)) return {};
+  const styles: Record<string, string> = {};
+  for (const [key, style] of Object.entries(value)) {
+    if (MISSIONS.some((mission) => mission.id === key) && typeof style === "string") {
+      styles[key] = style;
+    }
+  }
+  return styles;
+}
+
+function migrateLegacyProgress(
+  flags: string[],
+  completedMissions: string[],
+  activeMission: ActiveMissionRun | null,
+  messages: MessageState[],
+): { flags: string[]; messages: MessageState[] } {
+  const migratedFlags = new Set(flags);
+  const activeId = activeMission?.missionId;
+  if (completedMissions.length > 0 || activeMission) migratedFlags.add("onboarding_complete");
+  if (
+    completedMissions.includes("lola-cocktail-01") &&
+    (completedMissions.includes("lola-ice-02") || activeId === "lola-ice-02" || activeId === "lola-playlist-03")
+  ) {
+    migratedFlags.add("lola_ice_confirmed");
+  }
+  if (
+    completedMissions.includes("lola-ice-02") &&
+    (completedMissions.includes("lola-playlist-03") || activeId === "lola-playlist-03")
+  ) {
+    migratedFlags.add("lola_playlist_confirmed");
+  }
+  const migratedMessages = messages.map((message) => {
+    if (message.id === "lola-intro" && migratedFlags.has("onboarding_complete") && !message.replyId) {
+      return { ...message, read: true, replyId: "intro-reliable" };
+    }
+    if (message.id === "lola-after-cocktail" && migratedFlags.has("lola_ice_confirmed") && !message.replyId) {
+      return { ...message, read: true, replyId: "ice-careful" };
+    }
+    if (message.id === "lola-after-ice" && migratedFlags.has("lola_playlist_confirmed") && !message.replyId) {
+      return { ...message, read: true, replyId: "playlist-discreet" };
+    }
+    return message;
+  });
+  return { flags: [...migratedFlags], messages: migratedMessages };
+}
+
 export function createInitialSave(now = Date.now()): SaveState {
   return {
-    version: 1,
+    version: 2,
     resources: {
       cash: 0,
       fans: 0,
@@ -123,14 +214,19 @@ export function createInitialSave(now = Date.now()): SaveState {
     },
     flags: [],
     completedMissions: [],
+    missionStyles: {},
     messages: [{ id: "lola-intro", read: false, unlockedAt: now }],
     activeMission: null,
     lastDecision: null,
+    settings: {
+      sound: true,
+      haptics: true,
+    },
   };
 }
 
 export function validateSave(value: unknown): SaveState | null {
-  if (!isRecord(value) || value.version !== 1) {
+  if (!isRecord(value) || (value.version !== 1 && value.version !== 2)) {
     return null;
   }
   if (!isRecord(value.resources) || !isRecord(value.relationships) || !isRecord(value.relationships.lola)) {
@@ -149,8 +245,22 @@ export function validateSave(value: unknown): SaveState | null {
   if ([cash, fans, heat, attraction, trust, mood].some((number) => !Number.isFinite(number))) {
     return null;
   }
+  const completedMissions = stringArray(value.completedMissions);
+  const parsedFlags = stringArray(value.flags);
+  const parsedMessages = parseMessages(value.messages);
+  const migrated =
+    value.version === 1
+      ? migrateLegacyProgress(parsedFlags, completedMissions, activeMission, parsedMessages)
+      : { flags: parsedFlags, messages: parsedMessages };
+  const settings = isRecord(value.settings)
+    ? {
+        sound: typeof value.settings.sound === "boolean" ? value.settings.sound : true,
+        haptics: typeof value.settings.haptics === "boolean" ? value.settings.haptics : true,
+      }
+    : { sound: true, haptics: true };
+
   return {
-    version: 1,
+    version: 2,
     resources: {
       cash: Math.max(0, Math.round(cash)),
       fans: Math.max(0, Math.round(fans)),
@@ -163,11 +273,13 @@ export function validateSave(value: unknown): SaveState | null {
         mood: clamp(Math.round(mood)),
       },
     },
-    flags: stringArray(value.flags),
-    completedMissions: stringArray(value.completedMissions),
-    messages: parseMessages(value.messages),
+    flags: migrated.flags,
+    completedMissions,
+    missionStyles: parseMissionStyles(value.missionStyles),
+    messages: migrated.messages,
     activeMission,
     lastDecision: typeof value.lastDecision === "string" ? value.lastDecision : null,
+    settings,
   };
 }
 
