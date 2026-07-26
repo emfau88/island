@@ -804,7 +804,75 @@ h2,
 .chat-thread {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+
+.chat-stage {
+  display: flex;
+  flex-direction: column;
   gap: 9px;
+  padding: 11px;
+  border: 1px solid rgba(91, 139, 171, 0.16);
+  border-radius: 17px;
+  background: rgba(3, 11, 19, 0.42);
+}
+
+.chat-stage.is-complete {
+  border-color: rgba(139, 214, 74, 0.14);
+}
+
+.chat-stage.is-current {
+  border-color: rgba(56, 201, 255, 0.48);
+  background:
+    linear-gradient(145deg, rgba(8, 36, 51, 0.7), rgba(3, 11, 19, 0.78));
+  box-shadow:
+    0 0 0 1px rgba(56, 201, 255, 0.08),
+    0 12px 30px rgba(0, 0, 0, 0.22);
+}
+
+.chat-stage__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 1px;
+  color: #7990a0;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.chat-stage.is-current .chat-stage__header {
+  color: var(--cyan);
+}
+
+.chat-stage__header strong {
+  display: grid;
+  min-width: 31px;
+  height: 23px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(119, 149, 169, 0.1);
+  font-size: 0.57rem;
+}
+
+.chat-current-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cyan);
+  font-size: 0.57rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+}
+
+.chat-current-divider::before,
+.chat-current-divider::after {
+  height: 1px;
+  flex: 1;
+  background: rgba(56, 201, 255, 0.34);
+  content: "";
 }
 
 .chat-bubble {
@@ -1584,6 +1652,45 @@ h2,
     0 28px 80px rgba(0, 0, 0, 0.76),
     0 0 35px rgba(255, 79, 154, 0.13);
   animation: phone-device-in 260ms cubic-bezier(0.18, 0.84, 0.28, 1);
+}
+
+.chat-navigation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-navigation .chat-back {
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 8px;
+}
+
+.chat-navigation .chat-header {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chat-navigation .chat-header .avatar {
+  width: 44px;
+  height: 44px;
+  flex-basis: 44px;
+}
+
+.chat-jump-current {
+  min-width: 64px;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid rgba(56, 201, 255, 0.32);
+  border-radius: 11px;
+  background: rgba(7, 35, 49, 0.72);
+  color: #bdefff;
+  font-size: 0.61rem;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .phone-overlay.is-refresh,
@@ -3093,17 +3200,6 @@ h2,
     linear-gradient(155deg, rgba(17, 15, 28, 0.99), rgba(3, 9, 17, 0.995));
 }
 
-.consent-notice {
-  margin-bottom: 14px;
-  padding: 10px 11px;
-  border-left: 3px solid var(--green);
-  border-radius: 6px;
-  background: rgba(24, 57, 23, 0.3);
-  color: #bdd6b1;
-  font-size: 0.64rem;
-  line-height: 1.45;
-}
-
 .secret-wing-build {
   margin-bottom: 16px;
   padding: 13px;
@@ -3269,5 +3365,100 @@ h2,
 
   .local-mission-card {
     min-height: 130px;
+  }
+}
+
+.local-location-screen {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(56, 201, 255, 0.42) transparent;
+}
+
+.local-location-screen .local-location-background {
+  position: relative;
+  display: block;
+  height: clamp(330px, 55dvh, 520px);
+}
+
+.local-location-screen .local-location-shade {
+  bottom: auto;
+  height: clamp(330px, 55dvh, 520px);
+  background:
+    linear-gradient(180deg, rgba(2, 7, 13, 0.08), transparent 52%, #02070d 100%),
+    radial-gradient(circle at 50% 35%, transparent 35%, rgba(2, 7, 13, 0.22) 100%);
+}
+
+.local-location-panel {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  min-height: 48%;
+  max-height: none;
+  margin-top: -52px;
+  overflow: visible;
+}
+
+:fullscreen body,
+:fullscreen #app {
+  width: 100%;
+  height: 100%;
+}
+
+:fullscreen .app-shell {
+  height: 100dvh;
+  max-height: none;
+}
+
+@media (display-mode: fullscreen), (display-mode: standalone) {
+  .app-shell {
+    height: 100dvh;
+    max-height: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .phone-overlay {
+    align-items: center;
+    padding:
+      max(5px, env(safe-area-inset-top))
+      max(5px, env(safe-area-inset-right))
+      max(5px, env(safe-area-inset-bottom))
+      max(5px, env(safe-area-inset-left));
+  }
+
+  .phone-device {
+    width: 100%;
+    height: calc(
+      100dvh -
+      max(10px, env(safe-area-inset-top)) -
+      max(10px, env(safe-area-inset-bottom))
+    );
+    max-height: none;
+    border-radius: 25px;
+  }
+
+  .phone-device .phone-header {
+    padding: 12px 14px 6px;
+  }
+
+  .phone-device .phone-content {
+    padding: 4px 12px 18px;
+  }
+
+  .phone-dock {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .local-location-screen .local-location-background,
+  .local-location-screen .local-location-shade {
+    height: max(350px, 56dvh);
+  }
+
+  .local-location-panel {
+    min-height: 52dvh;
+    margin-top: -44px;
+    padding: 17px 13px max(22px, env(safe-area-inset-bottom));
   }
 }

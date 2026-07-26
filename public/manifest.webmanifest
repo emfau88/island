@@ -1,0 +1,20 @@
+{
+  "name": "Whore Island – Island Runner",
+  "short_name": "Island Runner",
+  "description": "Narratives Mobile-First-Inselspiel mit Aufträgen, Beziehungen und Konsequenzen.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#02070d",
+  "theme_color": "#050b13",
+  "icons": [
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

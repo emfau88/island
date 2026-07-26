@@ -33,7 +33,7 @@ npm run check
 - HTML/CSS für HUD, Dialoge und das Smartphone-Overlay
 - datengetriebene Missionen, beantwortbare Nachrichten und soziale Erinnerungen
 - persistente Ortsbesuche, einmalige Entdeckungen und ortsübergreifende Hinweis-Ketten
-- Runner-Home als Social Hub mit freiwilligem, ausbaubarem Midnight Wing
+- Runner-Home als Social Hub mit ausbaubarem Midnight Wing
 - Vitest für Save-, Progressions-, Transaktions- und Konsequenztests
 - Playwright für Onboarding, Mobile-Flows, Reloads und Screenshots
 - validierter und migrierbarer LocalStorage-Spielstand
@@ -41,7 +41,7 @@ npm run check
 
 ## Spielprinzip
 
-Eine Nachricht beantworten, den Treffpunkt in der Welt aufsuchen, Auftrag und Route abwägen, ein missionsbezogenes Fahrtereignis lösen und am Ziel mit den sichtbaren Konsequenzen leben. Zwischen Aufträgen werden Inselorte besucht, Hinweise kombiniert und Runner-Vorbereitungen getroffen. Geld fließt ins Anwesen und in den geheimen Midnight Wing, wo private Zwischenszenen nur mit freiwillig eingeladenen Gästen stattfinden; Grenzen, Privatsphäre und jederzeitige Abreise sind Teil des Systems. Figuren kennen nur Ereignisse, die sie selbst erlebt oder von denen sie nachvollziehbar erfahren haben.
+Eine Nachricht beantworten, den Treffpunkt in der Welt aufsuchen, Auftrag und Route abwägen, ein missionsbezogenes Fahrtereignis lösen und am Ziel mit den sichtbaren Konsequenzen leben. Zwischen Aufträgen werden Inselorte besucht, Hinweise kombiniert und Runner-Vorbereitungen getroffen. Geld fließt ins Anwesen und in den geheimen Midnight Wing, wo Vertrauen, Regeln und Storyfortschritt neue private Szenen öffnen. Figuren kennen nur Ereignisse, die sie selbst erlebt oder von denen sie nachvollziehbar erfahren haben.
 
 ## Datenschutz
 

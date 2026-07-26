@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Island Runner</title>
+  <defs>
+    <radialGradient id="ocean" cx="50%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#123e55"/>
+      <stop offset="0.58" stop-color="#061522"/>
+      <stop offset="1" stop-color="#02070d"/>
+    </radialGradient>
+    <linearGradient id="island" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#8bd64a"/>
+      <stop offset="0.55" stop-color="#236943"/>
+      <stop offset="1" stop-color="#0b342b"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#ocean)"/>
+  <path d="M122 311c-27-75 13-178 105-206 98-30 194 32 199 127 5 93-73 181-172 183-59 1-111-35-132-104Z" fill="url(#island)" stroke="#38c9ff" stroke-width="10"/>
+  <path d="M170 337c50-76 102-131 171-173M207 381c28-73 69-132 126-178" fill="none" stroke="#ffd787" stroke-width="12" stroke-linecap="round" opacity=".72"/>
+  <circle cx="332" cy="165" r="24" fill="#ff4f9a"/>
+  <circle cx="332" cy="165" r="8" fill="#fff"/>
+  <text x="256" y="292" fill="#fff" font-family="Impact, Arial Black, sans-serif" font-size="108" text-anchor="middle" letter-spacing="4">WI</text>
+</svg>

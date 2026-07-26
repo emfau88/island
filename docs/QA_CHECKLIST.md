@@ -72,7 +72,7 @@
 - [x] Runner-Home ist auf der Karte sichtbar und öffnet den Social Hub
 - [x] Midnight-Wing-Ausbau prüft Plan, Hausstufe, Missionen und Cash
 - [x] Einladungen prüfen Vertrauen und freie Gästekapazität
-- [x] Grenzen, private Erinnerung und freiwillige Abreise sind persistent
+- [x] Regeln, private Erinnerung und Abschluss eines Aufenthalts sind persistent
 - [x] neue Ansichten verursachen keine Browserfehler
 
 ## Veröffentlichung

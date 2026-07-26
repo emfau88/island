@@ -33,11 +33,11 @@ describe("SecretWingSystem", () => {
     expect(built.resources.cash).toBe(15_500);
   });
 
-  it("records a voluntary stay, private scene and unrestricted departure", () => {
+  it("records a guest stay, private scene and completed stay", () => {
     const built = wing.purchase(buildableState(), 1);
     const invited = wing.invite(built, "lola", 20);
     expect(invited.secretWing.guests.lola.status).toBe("staying");
-    expect(invited.lastDecision).toContain("freiwillig");
+    expect(invited.lastDecision).toContain("Einladung angenommen");
     expect(invited.social.memories.at(-1)?.knownBy).toEqual(["lola"]);
 
     const talked = wing.resolveGuestScene(invited, "lola", "boundaries", 30);
@@ -50,6 +50,6 @@ describe("SecretWingSystem", () => {
 
     const departed = wing.endStay(talked, "lola", 40);
     expect(departed.secretWing.guests.lola.status).toBe("left");
-    expect(departed.lastDecision).toContain("eigenen Wunsch");
+    expect(departed.lastDecision).toContain("Aufenthalt abgeschlossen");
   });
 });

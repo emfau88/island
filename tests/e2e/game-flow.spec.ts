@@ -66,7 +66,7 @@ test("hub fits every supported viewport without overflow and uses accessible tou
   expect(metrics.minimumTarget).toBeGreaterThanOrEqual(44);
 });
 
-test("smartphone is a dismissible overlay over the live island, not the game shell", async ({ page }) => {
+test("smartphone is a near-fullscreen dismissible overlay over the live island", async ({ page }, testInfo) => {
   const canvas = page.locator(".world-canvas");
   await expect(canvas).toBeVisible();
   await page.locator(".phone-cta").click();
@@ -81,11 +81,36 @@ test("smartphone is a dismissible overlay over the live island, not the game she
     const rect = element.getBoundingClientRect();
     return { width: rect.width, height: rect.height, viewportHeight: window.innerHeight };
   });
-  expect(dimensions.height).toBeLessThan(dimensions.viewportHeight * 0.9);
+  if (testInfo.project.name === "desktop") {
+    expect(dimensions.height).toBeLessThan(dimensions.viewportHeight * 0.9);
+  } else {
+    expect(dimensions.height).toBeGreaterThan(dimensions.viewportHeight * 0.9);
+    expect(dimensions.height).toBeLessThanOrEqual(dimensions.viewportHeight);
+  }
 
   await page.getByRole("button", { name: "Smartphone schließen" }).click();
   await expect(phone).toBeHidden();
   await expect(page.locator(".world-canvas")).toBeVisible();
+});
+
+test("mobile fullscreen control calls the native fullscreen surface", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-390", "Canonical fullscreen control runs once.");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "fullscreenEnabled", {
+      configurable: true,
+      value: true,
+    });
+    Object.defineProperty(document.documentElement, "requestFullscreen", {
+      configurable: true,
+      value: async () => {
+        document.documentElement.dataset.fullscreenRequested = "true";
+      },
+    });
+  });
+
+  await page.getByRole("button", { name: "Menü öffnen" }).click();
+  await page.getByRole("button", { name: "Vollbild starten" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-fullscreen-requested", "true");
 });
 
 test("island landmarks open local exploration and persist discoveries", async ({ page }, testInfo) => {
@@ -95,6 +120,17 @@ test("island landmarks open local exploration and persist discoveries", async ({
   await page.getByRole("button", { name: "Pool erkunden" }).click();
   await expect(page.getByRole("dialog", { name: "Pool" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Hier vor Ort" })).toBeVisible();
+  const locationLayout = await page.evaluate(() => {
+    const image = document.querySelector(".local-location-background")?.getBoundingClientRect();
+    const panel = document.querySelector(".local-location-panel")?.getBoundingClientRect();
+    return {
+      imageHeight: image?.height ?? 0,
+      panelTop: panel?.top ?? 0,
+      viewportHeight: window.innerHeight,
+    };
+  });
+  expect(locationLayout.imageHeight).toBeGreaterThan(locationLayout.viewportHeight * 0.4);
+  expect(locationLayout.panelTop).toBeGreaterThan(locationLayout.viewportHeight * 0.4);
   await page.getByRole("button", { name: "Unauffällig zuhören" }).click();
   await expect(page.getByText("Du kennst jetzt das ruhige Zeitfenster")).toBeVisible();
   await expect(page.getByRole("button", { name: "✓ Erledigt" })).toBeDisabled();
@@ -107,7 +143,7 @@ test("island landmarks open local exploration and persist discoveries", async ({
   await expect(page.getByRole("button", { name: "✓ Erledigt" })).toBeDisabled();
 });
 
-test("runner home and Midnight Wing support an opt-in guest lifecycle", async ({ page }, testInfo) => {
+test("runner home and Midnight Wing support a gated guest story lifecycle", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile-390", "Canonical Midnight Wing flow runs once.");
   await page.evaluate(() => {
     window.localStorage.setItem(
@@ -168,7 +204,8 @@ test("runner home and Midnight Wing support an opt-in guest lifecycle", async ({
   await expect(page.getByRole("dialog", { name: "Runner-Bungalow" })).toBeVisible();
   await page.getByRole("button", { name: "Geheimen Bereich prüfen" }).click();
   await expect(page.getByRole("dialog", { name: "Versiegelter Hohlraum" })).toBeVisible();
-  await expect(page.getByText("jeder Gast kann jederzeit gehen")).toBeVisible();
+  await expect(page.getByText("Hinter der Felswand liegt mehr als nur Fundament")).toBeVisible();
+  await expect(page.locator(".consent-notice")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Hidden Lounge ausbauen" }).click();
   await expect(page.getByRole("dialog", { name: "Hidden Lounge" })).toBeVisible();
@@ -178,7 +215,7 @@ test("runner home and Midnight Wing support an opt-in guest lifecycle", async ({
   await expect(page.getByText("Hat die Einladung angenommen")).toBeVisible();
   await page.getByRole("button", { name: "Grenzen besprechen" }).click();
   await expect(page.getByRole("button", { name: "✓ Grenzen besprechen" })).toBeDisabled();
-  await page.getByRole("button", { name: "Abreise ermöglichen" }).click();
+  await page.getByRole("button", { name: "Aufenthalt abschließen" }).click();
   await expect(page.getByText("Vertrauen 52%")).toBeVisible();
 
   await page.reload();
@@ -252,6 +289,13 @@ test("all message stages of one contact form a single continuous chat", async ({
   await expect(thread).toContainText("Du bist jetzt offiziell mein Lieblings-Runner.");
   await expect(thread.locator(".chat-bubble--player")).toHaveCount(4);
   await expect(phone.locator(".chat-header").getByText("4 Nachrichtenetappen")).toBeVisible();
+  await expect(thread.locator(".chat-stage")).toHaveCount(4);
+  await expect(thread.locator(".chat-stage.is-complete")).toHaveCount(3);
+  const currentStage = thread.locator('[data-chat-current="true"]');
+  await expect(currentStage).toHaveCount(1);
+  await expect(currentStage).toBeVisible();
+  await expect(currentStage.getByText("AKTUELL · ABGESCHLOSSEN")).toBeVisible();
+  await expect(currentStage.getByText("4/4")).toBeVisible();
 });
 
 test("property upgrade is visible, consequential and survives reload", async ({ page }, testInfo) => {

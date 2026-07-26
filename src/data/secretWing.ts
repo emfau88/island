@@ -38,13 +38,13 @@ export const SECRET_WING_TIERS: readonly SecretWingTierDefinition[] = [
     label: "Hidden Lounge",
     kicker: "MIDNIGHT WING · STUFE 1",
     description:
-      "Ein diskreter, komfortabler Rückzugsort für vertrauliche Gespräche und einen freiwilligen Gast.",
+      "Ein diskreter, komfortabler Raum für vertrauliche Gespräche und einen ausgewählten Gast.",
     cost: 4_500,
     requiredProperty: "bungalow",
     requiredMissions: 3,
     requiredDiscovery: "hidden_foundation_plan",
     capacity: 1,
-    perks: ["Ein freiwilliger Gast", "Private Gesprächsszenen"],
+    perks: ["Eine Gästesuite", "Private Gesprächsszenen"],
   },
   {
     level: 2,
@@ -58,7 +58,7 @@ export const SECRET_WING_TIERS: readonly SecretWingTierDefinition[] = [
     requiredMissions: 4,
     requiredDiscovery: "hidden_foundation_plan",
     capacity: 2,
-    perks: ["Zwei freiwillige Gäste", "Lola–Mia-Gruppenszenen"],
+    perks: ["Zwei Gästesuiten", "Lola–Mia-Gruppenszenen"],
   },
   {
     level: 3,

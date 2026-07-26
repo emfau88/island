@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0 – Mobile UX
+
+- unveränderte Inselkarte ohne stilfremde, gezeichnete Effekt-Overlays
+- nativer Vollbildmodus im Spielmenü sowie installierbare Mobile-Web-App mit Fullscreen-Start
+- mobile Ortsansichten mit großem, frei sichtbarem Hero-Bild und darunterliegender Aktionsfläche
+- nahezu bildschirmfüllendes Ingame-Smartphone auf kleinen Displays
+- Messenger-Etappen mit eindeutiger Markierung für Verlauf, Abschluss und aktuelle Antwort
+- automatischer Sprung zur aktuellen Chat-Etappe, ohne ältere Nachrichten auszublenden
+- geheimnisvollere Midnight-Wing-Texte ohne vorweggenommene Regel-Erklärungen
+- erweiterte Unit-, Desktop- und Mobile-E2E-Abdeckung
+
 ## 0.5.0 – Erkundbare Insel & Midnight Wing
 
 - sieben direkt anwählbare Inselorte mit zugänglichen, touchfreundlichen Landmarks
@@ -7,7 +18,7 @@
 - zwölf einmalige Ortsaktivitäten mit Kosten, Heat, Beziehungen und ortsübergreifenden Hinweisen
 - Runner-Home als eigener Social Hub für Ausbau, Besuche und soziale Erinnerungen
 - dreistufiger Midnight Wing als langfristiger Geld-Sink unter dem Anwesen
-- freiwillige Einladungen, explizite Grenzgespräche, private Erinnerungen und jederzeitige Abreise
+- Einladungen, explizite Regelgespräche, private Erinnerungen und persistente Aufenthaltsphasen
 - neue Bar-, Service-Dock- und Midnight-Wing-Kulissen
 - Save-Migration auf Version 5 sowie Unit- und Mobile-E2E-Abdeckung
 

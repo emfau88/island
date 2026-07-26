@@ -44,7 +44,7 @@ Alle wichtigen Gebäude sind auf der Inselkarte direkt anwählbar. Jeder Ort bes
 
 ## Midnight Wing
 
-Ein alter Fundamentplan in der Villa eröffnet unter dem Runner-Home einen dreistufigen Ausbaupfad. Der Midnight Wing ist ein privater Club- und Safehouse-Bereich, kein Gefängnis: Figuren werden eingeladen, entscheiden abhängig von Vertrauen selbst, besprechen Grenzen und können jederzeit abreisen. Gemeinsame Aufenthalte beeinflussen Freundschaft und Spannung nachvollziehbar.
+Ein alter Fundamentplan in der Villa eröffnet unter dem Runner-Home einen dreistufigen Ausbaupfad. Der Midnight Wing ist ein mysteriöser privater Club- und Story-Bereich. Einladungen, Aufenthaltsphasen und ihr Abschluss werden durch Vertrauen, Regeln und spätere Storybedingungen gesteuert. Gemeinsame Aufenthalte beeinflussen Freundschaft und Spannung nachvollziehbar.
 
 ## Soziales Gedächtnis
 

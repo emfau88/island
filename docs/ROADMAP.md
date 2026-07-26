@@ -45,7 +45,7 @@
 - [x] einmalige Ortsaktionen mit sichtbaren Kosten und Folgen
 - [x] ortsübergreifende Hinweis-Ketten
 - [x] Runner-Home als Social Hub mit Erinnerungspinnwand
-- [x] dreistufiger Midnight Wing als freiwilliger Gäste- und Beziehungsspace
+- [x] dreistufiger Midnight Wing als geheimer Gäste- und Beziehungsspace
 - [x] Save-Migration, Unit- und Mobile-E2E-Tests
 
 ## Phase 2.1 – Soziales Dreieck

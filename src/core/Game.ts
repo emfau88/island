@@ -741,11 +741,6 @@ export class Game {
       el("span", "eyebrow", current.kicker),
       title,
       el("p", "local-location-description", current.description),
-      el(
-        "div",
-        "consent-notice",
-        "Dieser Bereich ist ein freiwilliger Rückzugsort: Einladungen können abgelehnt werden, Privatsphäre und Grenzen werden besprochen, und jeder Gast kann jederzeit gehen.",
-      ),
     );
 
     if (next) {
@@ -804,7 +799,7 @@ export class Game {
     if (current.level >= 1) {
       const guestSection = el("section", "secret-guests");
       guestSection.append(
-        el("span", "eyebrow", "FREIWILLIGE GÄSTE"),
+        el("span", "eyebrow", "VERTRAULICHE AUFENTHALTE"),
         el("h2", undefined, `${this.secretWing.stayingGuests(this.state).length}/${current.capacity} Suiten belegt`),
       );
       for (const characterId of ["lola", "mia"] as CharacterId[]) {
@@ -823,7 +818,7 @@ export class Game {
             "p",
             undefined,
             stay.status === "staying"
-              ? "Hat die Einladung angenommen und kann jederzeit abreisen."
+              ? "Ein vertraulicher Aufenthalt im verborgenen Bereich hat begonnen."
               : `Vertrauen ${this.state.relationships[characterId].trust}% · benötigt ${inviteStatus.requiredTrust}%.`,
           ),
         );
@@ -855,10 +850,10 @@ export class Game {
             actions.append(sceneButton);
           }
           actions.append(
-            button("text-button", "Abreise ermöglichen", () => {
+            button("text-button", "Aufenthalt abschließen", () => {
               this.state = this.secretWing.endStay(this.state, characterId);
               this.persist();
-              this.events.emit("toast", `${character.name} ist auf eigenen Wunsch abgereist.`);
+              this.events.emit("toast", `${character.name}s Aufenthalt ist abgeschlossen.`);
               overlay.remove();
               this.openSecretWing();
             }),
@@ -874,7 +869,7 @@ export class Game {
                 this.state = this.secretWing.invite(this.state, characterId);
                 this.persist();
                 this.renderHud();
-                this.events.emit("toast", `${character.name} hat freiwillig zugesagt.`);
+                this.events.emit("toast", `${character.name} hat die Einladung angenommen.`);
                 overlay.remove();
                 this.openSecretWing();
               } catch (error) {
@@ -1217,7 +1212,7 @@ export class Game {
     this.phoneOverlay = overlay;
     if (this.selectedChatId) {
       window.requestAnimationFrame(() => {
-        content.scrollTop = content.scrollHeight;
+        this.scrollConversationToCurrent(content);
       });
     }
     close.focus();
@@ -1386,27 +1381,64 @@ export class Game {
       ),
     );
     const navigation = el("div", "chat-navigation");
-    navigation.append(back, chatHeader);
+    const jumpCurrent = button("chat-jump-current", "↓ Aktuell", () =>
+      this.scrollConversationToCurrent(container),
+    );
+    navigation.append(back, chatHeader, jumpCurrent);
 
     const thread = el("div", "chat-thread");
-    const pendingState = conversation.find(
-      (message) =>
-        !message.replyId && getMessage(message.id).replies.length > 0,
-    );
-    for (const messageState of conversation) {
+    const pendingState = [...conversation]
+      .reverse()
+      .find(
+        (message) =>
+          !message.replyId && getMessage(message.id).replies.length > 0,
+      );
+    const currentState = pendingState ?? conversation.at(-1);
+    for (const [index, messageState] of conversation.entries()) {
       const definition = getMessage(messageState.id);
+      const isCurrent = messageState.id === currentState?.id;
+      if (isCurrent && index > 0) {
+        const divider = el("div", "chat-current-divider");
+        divider.append(
+          el("span", undefined, pendingState ? "NEUE ETAPPE" : "LETZTE ETAPPE"),
+        );
+        thread.append(divider);
+      }
+      const stage = el(
+        "section",
+        `chat-stage${isCurrent ? " is-current" : " is-complete"}`,
+      );
+      stage.dataset.messageId = messageState.id;
+      if (isCurrent) {
+        stage.dataset.chatCurrent = "true";
+        stage.setAttribute("aria-current", "true");
+      }
+      const stageHeader = el("header", "chat-stage__header");
+      stageHeader.append(
+        el(
+          "span",
+          undefined,
+          isCurrent
+            ? pendingState
+              ? "AKTUELL · ANTWORT AUSSTEHEND"
+              : "AKTUELL · ABGESCHLOSSEN"
+            : "ABGESCHLOSSEN",
+        ),
+        el("strong", undefined, `${index + 1}/${conversation.length}`),
+      );
+      stage.append(stageHeader);
       for (const line of definition.body) {
-        thread.append(el("p", "chat-bubble chat-bubble--npc", line));
+        stage.append(el("p", "chat-bubble chat-bubble--npc", line));
       }
       const selectedReply = definition.replies.find(
         (reply) => reply.id === messageState.replyId,
       );
       if (selectedReply) {
-        thread.append(
+        stage.append(
           el("p", "chat-bubble chat-bubble--player", selectedReply.label),
         );
         for (const line of selectedReply.response) {
-          thread.append(el("p", "chat-bubble chat-bubble--npc", line));
+          stage.append(el("p", "chat-bubble chat-bubble--npc", line));
         }
       } else if (pendingState?.id === messageState.id) {
         const replyPanel = el("div", "message-replies");
@@ -1422,8 +1454,9 @@ export class Game {
           );
           replyPanel.append(replyButton);
         }
-        thread.append(replyPanel);
+        stage.append(replyPanel);
       }
+      thread.append(stage);
     }
 
     if (!pendingState) {
@@ -1439,6 +1472,22 @@ export class Game {
     }
 
     container.append(navigation, thread);
+  }
+
+  private scrollConversationToCurrent(container: HTMLElement): void {
+    const current = container.querySelector<HTMLElement>(
+      '[data-chat-current="true"]',
+    );
+    if (!current) {
+      container.scrollTop = container.scrollHeight;
+      return;
+    }
+    const navigation =
+      container.querySelector<HTMLElement>(".chat-navigation");
+    container.scrollTop = Math.max(
+      0,
+      current.offsetTop - (navigation?.offsetHeight ?? 0) - 10,
+    );
   }
 
   private replyToMessage(definition: MessageDefinition, replyId: string): void {
@@ -2075,6 +2124,11 @@ export class Game {
       el("p", "menu-status", `Aktueller Heat-Status: ${heatTier.label} · ${heatTier.description}`),
       button(
         "secondary-button",
+        document.fullscreenElement ? "Vollbild beenden" : "Vollbild starten",
+        () => void this.toggleFullscreen(overlay),
+      ),
+      button(
+        "secondary-button",
         `Sound: ${this.state.settings.sound ? "An" : "Aus"}`,
         () => this.toggleSetting("sound", overlay),
       ),
@@ -2099,6 +2153,36 @@ export class Game {
     overlay.append(modal);
     this.shell.append(overlay);
     title.focus();
+  }
+
+  private async toggleFullscreen(overlay: HTMLElement): Promise<void> {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        overlay.remove();
+        this.events.emit("toast", "Vollbild beendet.");
+        return;
+      }
+      if (!document.fullscreenEnabled || !document.documentElement.requestFullscreen) {
+        overlay.remove();
+        this.events.emit(
+          "toast",
+          "Auf diesem Gerät: Zum Home-Bildschirm hinzufügen und von dort starten.",
+        );
+        return;
+      }
+      await document.documentElement.requestFullscreen({
+        navigationUI: "hide",
+      });
+      overlay.remove();
+      this.events.emit("toast", "Vollbild aktiv.");
+    } catch {
+      overlay.remove();
+      this.events.emit(
+        "toast",
+        "Vollbild wurde vom Browser nicht freigegeben.",
+      );
+    }
   }
 
   private legend(): HTMLElement {

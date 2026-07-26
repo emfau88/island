@@ -173,7 +173,7 @@ export class SecretWingSystem {
         },
       },
       flags: unique([...state.flags, `${characterId}_midnight_guest`]),
-      lastDecision: `${characterId === "lola" ? "Lola" : "Mia"} hat die Einladung freiwillig angenommen.`,
+      lastDecision: `${characterId === "lola" ? "Lola" : "Mia"} hat die Einladung angenommen.`,
     };
     next = applySocialConsequences(
       next,
@@ -184,7 +184,7 @@ export class SecretWingSystem {
           {
             id: `${characterId}_midnight_stay`,
             title: "Einladung in den Midnight Wing",
-            description: `${characterId === "lola" ? "Lola" : "Mia"} hat sich freiwillig für einen Aufenthalt im geheimen Bereich entschieden.`,
+            description: `${characterId === "lola" ? "Lola" : "Mia"} hat einen Aufenthalt im geheimen Bereich begonnen.`,
             tone: "private",
             knownBy: unique([characterId, ...otherGuests]),
           },
@@ -217,7 +217,7 @@ export class SecretWingSystem {
           },
         },
       },
-      lastDecision: `${characterId === "lola" ? "Lola" : "Mia"} ist auf eigenen Wunsch abgereist.`,
+      lastDecision: `${characterId === "lola" ? "Lola" : "Mia"} hat den Aufenthalt abgeschlossen.`,
     };
   }
 
@@ -277,8 +277,8 @@ export class SecretWingSystem {
               ? "Klare Grenzen"
               : "Gespräch unter der Insel",
             description: isBoundaries
-              ? "Ihr habt Dauer, Privatsphäre und die Möglichkeit zur jederzeitigen Abreise ausdrücklich geklärt."
-              : "Im Midnight Wing wurde ein persönliches Geheimnis freiwillig geteilt.",
+              ? "Ihr habt Regeln, Privatsphäre und Erwartungen für den Aufenthalt ausdrücklich geklärt."
+              : "Im Midnight Wing wurde ein persönliches Geheimnis geteilt.",
             tone: isBoundaries ? "honest" : "warm",
             knownBy: [characterId],
           },

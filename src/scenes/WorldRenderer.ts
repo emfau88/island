@@ -114,7 +114,8 @@ export class WorldRenderer {
     const map = new Sprite(worldTexture);
     map.width = WORLD_WIDTH;
     map.height = WORLD_HEIGHT;
-    this.world.addChild(map, this.routeLayer, this.pinLayer, this.vehicleLayer);
+    this.world.addChild(map);
+    this.world.addChild(this.routeLayer, this.pinLayer, this.vehicleLayer);
 
     if (mode === "route") {
       this.addPins();
