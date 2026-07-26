@@ -28,4 +28,21 @@ describe("MessageSystem", () => {
     expect(twice).toEqual(once);
     expect(twice.relationships.lola.trust).toBe(initial.relationships.lola.trust + 3);
   });
+
+  it("routes Mia replies and social consequences to the correct character", () => {
+    const initial = createInitialSave(10);
+    initial.flags.push("lola_slice_finished");
+    initial.messages.push({ id: "mia-intro", read: false, unlockedAt: 20 });
+    const lolaBefore = { ...initial.relationships.lola };
+
+    const replied = messages.reply(initial, "mia-intro", "mia-intro-careful", 30);
+
+    expect(replied.relationships.mia.trust).toBe(initial.relationships.mia.trust + 4);
+    expect(replied.relationships.mia.attraction).toBe(initial.relationships.mia.attraction + 1);
+    expect(replied.relationships.lola).toEqual(lolaBefore);
+    expect(replied.flags).toContain("mia_documents_confirmed");
+    expect(missions.available(replied).map((mission) => mission.id)).toContain(
+      "mia-documents-01",
+    );
+  });
 });

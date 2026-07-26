@@ -2,7 +2,19 @@ export type SceneId = "hub" | "pickup" | "route" | "travel" | "encounter";
 export type PhoneTab = "jobs" | "messages" | "contacts";
 export type MissionPhase = "pickup" | "route" | "travel" | "encounter";
 export type Reaction = "neutral" | "positive" | "flirty" | "serious" | "annoyed" | "surprised";
-export type LocationId = "pool" | "yacht";
+export type CharacterId = "lola" | "mia";
+export type LocationId =
+  | "pool"
+  | "yacht"
+  | "villa"
+  | "club"
+  | "bar"
+  | "dock"
+  | "runner-home";
+export type PropertyTierId = "shack" | "bungalow" | "pool-house" | "villa";
+export type SocialMemoryTone = "warm" | "honest" | "tense" | "private" | "professional";
+export type SecretWingLevel = 0 | 1 | 2 | 3;
+export type GuestStayStatus = "none" | "staying" | "left";
 
 export interface Point {
   x: number;
@@ -24,6 +36,8 @@ export interface Choice {
   hint: string;
   reaction: Reaction;
   effects: Partial<Effects>;
+  flags?: string[];
+  social?: SocialConsequences;
 }
 
 export interface RouteDefinition {
@@ -47,7 +61,7 @@ export interface MissionRequirements {
 
 export interface MissionDefinition {
   id: string;
-  characterId: "lola";
+  characterId: CharacterId;
   title: string;
   summary: string;
   startLocation: LocationId;
@@ -82,6 +96,58 @@ export interface ResourceState {
   heat: number;
 }
 
+export interface PropertyState {
+  tier: PropertyTierId;
+  tutorialSeen: boolean;
+}
+
+export interface SocialMemorySeed {
+  id: string;
+  title: string;
+  description: string;
+  tone: SocialMemoryTone;
+  knownBy: CharacterId[];
+}
+
+export interface SocialMemory extends SocialMemorySeed {
+  createdAt: number;
+}
+
+export interface SocialConsequences {
+  relationships?: Partial<Record<CharacterId, Partial<RelationshipState>>>;
+  friendship?: number;
+  tension?: number;
+  memories?: SocialMemorySeed[];
+}
+
+export interface SocialState {
+  lolaMia: {
+    friendship: number;
+    tension: number;
+  };
+  memories: SocialMemory[];
+}
+
+export interface ExplorationState {
+  visitedLocations: LocationId[];
+  discoveries: string[];
+  completedActions: string[];
+}
+
+export interface GuestStayState {
+  status: GuestStayStatus;
+  invitedAt?: number;
+  acceptedAt?: number;
+  leftAt?: number;
+  completedScenes: string[];
+}
+
+export interface SecretWingState {
+  level: SecretWingLevel;
+  tutorialSeen: boolean;
+  guests: Record<CharacterId, GuestStayState>;
+}
+
 export interface ActiveMissionRun {
   missionId: string;
   phase: MissionPhase;
@@ -109,11 +175,13 @@ export interface MessageState {
 }
 
 export interface SaveState {
-  version: 2;
+  version: 5;
   resources: ResourceState;
-  relationships: {
-    lola: RelationshipState;
-  };
+  relationships: Record<CharacterId, RelationshipState>;
+  property: PropertyState;
+  social: SocialState;
+  exploration: ExplorationState;
+  secretWing: SecretWingState;
   flags: string[];
   completedMissions: string[];
   missionStyles: Record<string, string>;
@@ -133,10 +201,12 @@ export interface MessageReply {
   effects: Partial<Effects>;
   flags: string[];
   response: string[];
+  social?: SocialConsequences;
 }
 
 export interface MessageDefinition {
   id: string;
+  characterId: CharacterId;
   sender: string;
   preview: string;
   body: string[];
@@ -156,8 +226,13 @@ export interface MissionResult {
 export interface LocationDefinition {
   id: LocationId;
   label: string;
+  mapLabel: string;
+  description: string;
   world: Point;
   asset: string;
+  color: number;
+  icon: string;
+  kind: "venue" | "home";
 }
 
 export const ZERO_EFFECTS: Effects = {

@@ -11,6 +11,7 @@ import {
   type SaveState,
 } from "../core/types";
 import { getHeatTier, getRelationshipTier, runnerStyle } from "./ProgressionSystem";
+import { applyCharacterEffects, applySocialConsequences } from "./SocialSystem";
 
 function unique(items: string[]): string[] {
   return [...new Set(items)];
@@ -48,7 +49,7 @@ export class MissionSystem {
       ...state,
       relationships: {
         ...state.relationships,
-        lola: { ...state.relationships.lola, mood: 50 },
+        [mission.characterId]: { ...state.relationships[mission.characterId], mood: 50 },
       },
       activeMission: {
         missionId,
@@ -163,7 +164,7 @@ export class MissionSystem {
     const heatTier = getHeatTier(projectedHeat);
     const grossCash = Math.max(0, allEffects.cash);
     const heatPenalty = Math.round(grossCash * heatTier.payoutPenalty);
-    const relationshipTier = getRelationshipTier(state.relationships.lola);
+    const relationshipTier = getRelationshipTier(state.relationships[mission.characterId]);
     const relationshipBonusFans = Math.round(Math.max(0, allEffects.fans) * relationshipTier.fanBonus);
     if (heatPenalty > 0) {
       const penalty = { cash: -heatPenalty };
@@ -183,21 +184,20 @@ export class MissionSystem {
       ? state.messages
       : [...state.messages, { id: mission.followUpMessageId, read: false, unlockedAt: now }];
     const style = runnerStyle(allEffects.attraction, allEffects.trust, allEffects.heat);
-    const nextState: SaveState = {
+    const selectedChoices = [
+      mission.pickupChoices.find((candidate) => candidate.id === run.selectedPickupChoice),
+      mission.travelEvent.choices.find((candidate) => candidate.id === run.selectedTravelChoice),
+      choice,
+    ].filter((selected): selected is Choice => Boolean(selected));
+    const choiceFlags = selectedChoices.flatMap((selected) => selected.flags ?? []);
+    let nextState: SaveState = {
       ...state,
       resources: {
         cash: Math.max(0, state.resources.cash + allEffects.cash),
         fans: Math.max(0, state.resources.fans + allEffects.fans),
         heat: clamp(state.resources.heat + allEffects.heat),
       },
-      relationships: {
-        lola: {
-          attraction: clamp(state.relationships.lola.attraction + allEffects.attraction),
-          trust: clamp(state.relationships.lola.trust + allEffects.trust),
-          mood: clamp(50 + allEffects.mood),
-        },
-      },
-      flags: unique([...state.flags, ...mission.completionFlags]),
+      flags: unique([...state.flags, ...mission.completionFlags, ...choiceFlags]),
       completedMissions: unique([...state.completedMissions, mission.id]),
       missionStyles: {
         ...state.missionStyles,
@@ -207,6 +207,10 @@ export class MissionSystem {
       activeMission: null,
       lastDecision: choice.label,
     };
+    nextState = applyCharacterEffects(nextState, mission.characterId, allEffects, 50);
+    for (const selected of selectedChoices) {
+      nextState = applySocialConsequences(nextState, selected.social, now);
+    }
     return {
       state: nextState,
       entries,
@@ -221,11 +225,13 @@ export class MissionSystem {
     if (!state.activeMission) {
       return state;
     }
+    const mission = getMission(state.activeMission.missionId);
     return {
       ...state,
       activeMission: null,
       relationships: {
-        lola: { ...state.relationships.lola, mood: 50 },
+        ...state.relationships,
+        [mission.characterId]: { ...state.relationships[mission.characterId], mood: 50 },
       },
     };
   }

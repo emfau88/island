@@ -289,6 +289,164 @@ export const MISSIONS: MissionDefinition[] = [
     completionFlags: ["lola_playlist_complete"],
     followUpMessageId: "lola-after-playlist",
   },
+  {
+    id: "mia-documents-01",
+    characterId: "mia",
+    title: "Vertrauliche Übergabe",
+    summary: "Mia und ein versiegeltes Dokument unbemerkt von der Villa zum Club bringen.",
+    startLocation: "villa",
+    destination: "club",
+    requirements: {
+      requiredFlags: ["mia_documents_confirmed"],
+      forbiddenFlags: ["mia_documents_complete"],
+    },
+    routeIds: ["villa-club-terraces", "villa-club-promenade"],
+    pickupPrompt: "Der Umschlag bleibt zu. Und mein Name fällt heute Abend nirgends.",
+    pickupChoices: [
+      {
+        id: "mia-sealed-case",
+        label: "Versiegelt bis zur persönlichen Übergabe.",
+        hint: "Diskret",
+        reaction: "positive",
+        effects: { trust: 7, mood: 2 },
+      },
+      {
+        id: "mia-verify-recipient",
+        label: "Ich brauche nur ein Erkennungswort für den Empfänger.",
+        hint: "Vorsichtig",
+        reaction: "serious",
+        effects: { trust: 5, mood: 1, heat: -1 },
+      },
+      {
+        id: "mia-no-questions",
+        label: "Keine Namen, keine Fragen.",
+        hint: "Professionell",
+        reaction: "positive",
+        effects: { trust: 4, attraction: 2 },
+      },
+    ],
+    travelEvent: {
+      title: "Lolas Anruf",
+      prompt: "Lola ruft an. Mia sieht den Namen auf deinem Display und wartet auf deine Reaktion.",
+      triggerProgress: 0.42,
+      choices: [
+        {
+          id: "mia-call-transparent",
+          label: "Lola kurz schreiben: „Fahre gerade Mia.“",
+          hint: "Transparent",
+          reaction: "positive",
+          effects: { trust: 5, mood: 1 },
+          social: {
+            relationships: {
+              lola: { trust: 1, mood: -1 },
+            },
+            friendship: 1,
+            tension: 1,
+            memories: [
+              {
+                id: "transparent_lola_call",
+                title: "Offene Karten im Wagen",
+                description: "Du hast Lola offen gesagt, dass Mia bei dir im Wagen saß.",
+                tone: "honest",
+                knownBy: ["lola", "mia"],
+              },
+            ],
+          },
+        },
+        {
+          id: "mia-call-silence",
+          label: "Den Anruf kommentarlos stumm schalten.",
+          hint: "Diskret",
+          reaction: "serious",
+          effects: { trust: 3, mood: 1 },
+          social: {
+            relationships: {
+              lola: { attraction: -1, mood: -4 },
+            },
+            tension: 3,
+            memories: [
+              {
+                id: "mia_saw_ignored_call",
+                title: "Der weggedrückte Anruf",
+                description: "Mia hat gesehen, wie du Lolas Anruf für ihren Auftrag ignoriert hast.",
+                tone: "tense",
+                knownBy: ["mia"],
+              },
+              {
+                id: "lola_call_ignored",
+                title: "Nicht rangegangen",
+                description: "Lola weiß, dass du ihren Anruf weggedrückt hast – aber nicht warum.",
+                tone: "tense",
+                knownBy: ["lola"],
+              },
+            ],
+          },
+        },
+        {
+          id: "mia-call-boundary",
+          label: "Mia fragen, ob du kurz rangehen sollst.",
+          hint: "Respektvoll",
+          reaction: "positive",
+          effects: { trust: 4, attraction: 2, mood: 2 },
+          social: {
+            tension: -1,
+            memories: [
+              {
+                id: "mia_boundary_respected",
+                title: "Grenzen respektiert",
+                description: "Du hast Mia in einer heiklen Situation entscheiden lassen.",
+                tone: "warm",
+                knownBy: ["mia"],
+              },
+            ],
+          },
+        },
+      ],
+    },
+    encounterPrompt: "Niemand hat uns aufgehalten. Jetzt zeigt sich, ob du auch beim letzten Meter diskret bleibst.",
+    arrivalPrompts: {
+      "villa-club-terraces": "Keine Kameras, keine Fragen. Der Terrassenweg war die richtige Wahl.",
+      "villa-club-promenade": "Schnell waren wir. Unbemerkt eher nicht. Bring es jetzt sauber zu Ende.",
+    },
+    encounterChoices: [
+      {
+        id: "mia-document-first",
+        label: "Erst die Übergabe bestätigen lassen, dann gehen.",
+        hint: "Zuverlässig",
+        reaction: "positive",
+        effects: { trust: 8, mood: 2 },
+      },
+      {
+        id: "mia-ask-context",
+        label: "Was habe ich da gerade eigentlich geschützt?",
+        hint: "Persönlich",
+        reaction: "serious",
+        effects: { trust: 3, attraction: 3, mood: 1 },
+      },
+      {
+        id: "mia-offer-home",
+        label: "Wenn du danach Ruhe brauchst: mein Bungalow.",
+        hint: "Einladung",
+        reaction: "positive",
+        effects: { attraction: 6, mood: 4 },
+        flags: ["mia_home_offer_made"],
+        social: {
+          memories: [
+            {
+              id: "mia_bungalow_offer",
+              title: "Ein Angebot nach Mitternacht",
+              description: "Du hast Mia nach dem Auftrag in deinen Bungalow eingeladen.",
+              tone: "private",
+              knownBy: ["mia"],
+            },
+          ],
+        },
+      },
+    ],
+    rewards: { cash: 2_800, fans: 120 },
+    completionFlags: ["mia_documents_complete"],
+    followUpMessageId: "mia-after-documents",
+  },
 ];
 
 export function getMission(id: string): MissionDefinition {

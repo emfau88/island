@@ -27,6 +27,25 @@ const serviceSouth = [
 
 const reverse = (points: { x: number; y: number }[]) => [...points].reverse();
 
+const villaClubTerraces = [
+  { x: 520, y: 520 },
+  { x: 605, y: 585 },
+  { x: 670, y: 690 },
+  { x: 730, y: 805 },
+  { x: 825, y: 905 },
+  { x: 920, y: 985 },
+  { x: 1_025, y: 1_050 },
+];
+
+const villaClubPromenade = [
+  { x: 520, y: 520 },
+  { x: 585, y: 690 },
+  { x: 655, y: 855 },
+  { x: 785, y: 985 },
+  { x: 900, y: 1_035 },
+  { x: 1_025, y: 1_050 },
+];
+
 export const ROUTES: RouteDefinition[] = [
   {
     id: "pool-yacht-coast",
@@ -79,6 +98,32 @@ export const ROUTES: RouteDefinition[] = [
     risk: "Heat +8 · Kontrollen möglich",
     effects: { fans: 40, heat: 8, mood: 1, trust: 5 },
     points: reverse(serviceSouth),
+  },
+  {
+    id: "villa-club-terraces",
+    label: "Terrassenweg",
+    description: "Weniger Kameras und genug Abstand zu den Partyvillen.",
+    from: "villa",
+    to: "club",
+    durationMs: 7_000,
+    tags: ["diskret", "ruhig"],
+    advantage: "Heat −4 · Mias Diskretion",
+    risk: "7 Sekunden · keine öffentliche Aufmerksamkeit",
+    effects: { heat: -4, trust: 4, mood: 2 },
+    points: villaClubTerraces,
+  },
+  {
+    id: "villa-club-promenade",
+    label: "VIP-Promenade",
+    description: "Schnell zum Club, aber unter Kameras und neugierigen Blicken.",
+    from: "villa",
+    to: "club",
+    durationMs: 5_200,
+    tags: ["schnell", "öffentlich"],
+    advantage: "Fans +160 · nur 5 Sekunden",
+    risk: "Heat +7 · Mias Vertrauen −3",
+    effects: { fans: 160, heat: 7, trust: -3, mood: -1 },
+    points: villaClubPromenade,
   },
 ];
 

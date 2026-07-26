@@ -46,11 +46,11 @@ describe("SaveManager", () => {
     storage.setItem("island-runner-save", "{broken");
     const manager = new SaveManager(storage);
 
-    expect(manager.load().version).toBe(2);
+    expect(manager.load().version).toBe(5);
     expect(manager.load().resources.cash).toBe(0);
 
     storage.setItem("island-runner-save", JSON.stringify({ version: 99 }));
-    expect(manager.load().version).toBe(2);
+    expect(manager.load().version).toBe(5);
   });
 
   it("clamps externally modified values and rejects malformed active runs", () => {
@@ -89,11 +89,58 @@ describe("SaveManager", () => {
     };
     const migrated = validateSave(legacy);
 
-    expect(migrated?.version).toBe(2);
+    expect(migrated?.version).toBe(5);
+    expect(migrated?.property).toEqual({ tier: "shack", tutorialSeen: false });
     expect(migrated?.flags).toContain("onboarding_complete");
     expect(migrated?.messages.find((message) => message.id === "lola-intro")?.replyId).toBe(
       "intro-reliable",
     );
     expect(migrated?.settings).toEqual({ sound: true, haptics: true });
+    expect(migrated?.relationships.mia).toEqual({ attraction: 4, trust: 8, mood: 50 });
+    expect(migrated?.social).toEqual({
+      lolaMia: { friendship: 45, tension: 10 },
+      memories: [],
+    });
+    expect(migrated?.exploration).toEqual({
+      visitedLocations: [],
+      discoveries: [],
+      completedActions: [],
+    });
+    expect(migrated?.secretWing.level).toBe(0);
+    expect(migrated?.secretWing.guests.lola.status).toBe("none");
+  });
+
+  it("migrates version 2 saves to the starting property without losing progress", () => {
+    const state = createInitialSave(10);
+    const legacy = {
+      ...state,
+      version: 2,
+      property: undefined,
+      resources: { cash: 4_300, fans: 510, heat: 18 },
+      completedMissions: ["lola-cocktail-01", "lola-ice-02"],
+    };
+    const migrated = validateSave(legacy);
+
+    expect(migrated?.version).toBe(5);
+    expect(migrated?.property).toEqual({ tier: "shack", tutorialSeen: false });
+    expect(migrated?.resources.cash).toBe(4_300);
+    expect(migrated?.completedMissions).toHaveLength(2);
+  });
+
+  it("migrates version 3 property saves with a stable social baseline", () => {
+    const state = createInitialSave(10);
+    const legacy = {
+      ...state,
+      version: 3,
+      relationships: { lola: state.relationships.lola },
+      social: undefined,
+      property: { tier: "bungalow", tutorialSeen: true },
+    };
+    const migrated = validateSave(legacy);
+
+    expect(migrated?.version).toBe(5);
+    expect(migrated?.property).toEqual({ tier: "bungalow", tutorialSeen: true });
+    expect(migrated?.relationships.mia.trust).toBe(8);
+    expect(migrated?.social.memories).toEqual([]);
   });
 });

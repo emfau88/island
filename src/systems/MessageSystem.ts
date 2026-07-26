@@ -1,6 +1,7 @@
 import { getMessage } from "../data/messages";
 import { syncUnlockedMessages } from "../core/SaveManager";
 import { clamp, type SaveState } from "../core/types";
+import { applyCharacterEffects, applySocialConsequences } from "./SocialSystem";
 
 function unique(items: string[]): string[] {
   return [...new Set(items)];
@@ -18,19 +19,12 @@ export class MessageSystem {
       return state;
     }
 
-    const next = {
+    let next: SaveState = {
       ...state,
       resources: {
         cash: Math.max(0, state.resources.cash + (reply.effects.cash ?? 0)),
         fans: Math.max(0, state.resources.fans + (reply.effects.fans ?? 0)),
         heat: clamp(state.resources.heat + (reply.effects.heat ?? 0)),
-      },
-      relationships: {
-        lola: {
-          attraction: clamp(state.relationships.lola.attraction + (reply.effects.attraction ?? 0)),
-          trust: clamp(state.relationships.lola.trust + (reply.effects.trust ?? 0)),
-          mood: clamp(state.relationships.lola.mood + (reply.effects.mood ?? 0)),
-        },
       },
       flags: unique([...state.flags, ...reply.flags]),
       messages: state.messages.map((message) =>
@@ -38,6 +32,8 @@ export class MessageSystem {
       ),
       lastDecision: reply.label,
     };
+    next = applyCharacterEffects(next, definition.characterId, reply.effects);
+    next = applySocialConsequences(next, reply.social, now);
     return syncUnlockedMessages(next, now);
   }
 }

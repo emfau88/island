@@ -9,27 +9,24 @@ import {
   type Ticker,
 } from "pixi.js";
 import { ASSETS } from "../core/AssetManager";
-import type { Point, RouteDefinition } from "../core/types";
+import { LOCATIONS } from "../data/locations";
+import type {
+  LocationId,
+  Point,
+  RouteDefinition,
+} from "../core/types";
 
 const WORLD_WIDTH = 2_048;
 const WORLD_HEIGHT = 3_072;
 
-interface MapLabel {
-  label: string;
-  point: Point;
-  color: number;
-}
-
-const LABELS: MapLabel[] = [
-  { label: "VILLA", point: { x: 520, y: 520 }, color: 0x8bd64a },
-  { label: "POOL", point: { x: 1_430, y: 690 }, color: 0x38c9ff },
-  { label: "CLUB", point: { x: 1_025, y: 1_050 }, color: 0xff4f9a },
-  { label: "BAR", point: { x: 650, y: 1_620 }, color: 0xffa43a },
-  { label: "DOCK", point: { x: 1_425, y: 2_175 }, color: 0x38c9ff },
-  { label: "YACHT-DOCK", point: { x: 1_065, y: 2_725 }, color: 0xff4f9a },
-];
-
 type WorldMode = "hub" | "route" | "travel";
+
+export interface WorldRendererOptions {
+  onLocationSelect?: (locationId: LocationId) => void;
+  highlightedLocationId?: LocationId;
+  homeLabel?: string;
+  discoveryLocationIds?: LocationId[];
+}
 
 function pathLength(points: Point[]): { lengths: number[]; total: number } {
   const lengths = [0];
@@ -83,13 +80,20 @@ export class WorldRenderer {
   private routePaused = false;
   private pausedAt = 0;
   private totalPaused = 0;
+  private landmarkButtons: HTMLButtonElement[] = [];
+  private options: WorldRendererOptions = {};
 
   public constructor(private readonly host: HTMLElement) {
     this.resizeObserver = new ResizeObserver(() => this.layout());
   }
 
-  public async init(mode: WorldMode, routes: RouteDefinition[] = []): Promise<void> {
+  public async init(
+    mode: WorldMode,
+    routes: RouteDefinition[] = [],
+    options: WorldRendererOptions = {},
+  ): Promise<void> {
     this.mode = mode;
+    this.options = options;
     await this.app.init({
       resizeTo: this.host,
       backgroundColor: 0x02070d,
@@ -112,8 +116,11 @@ export class WorldRenderer {
     map.height = WORLD_HEIGHT;
     this.world.addChild(map, this.routeLayer, this.pinLayer, this.vehicleLayer);
 
-    if (mode !== "travel") {
+    if (mode === "route") {
       this.addPins();
+    }
+    if (mode === "hub") {
+      this.addLandmarkButtons();
     }
     routes.forEach((route, index) => this.addRoute(route, index === 0 ? 0xff4f9a : 0x38c9ff));
     if (mode === "travel") {
@@ -205,6 +212,8 @@ export class WorldRenderer {
     if (this.tickerHandler) {
       this.app.ticker.remove(this.tickerHandler);
     }
+    for (const button of this.landmarkButtons) button.remove();
+    this.landmarkButtons = [];
     this.app.destroy(true);
   }
 
@@ -227,9 +236,9 @@ export class WorldRenderer {
   }
 
   private addPins(): void {
-    for (const item of LABELS) {
+    for (const item of LOCATIONS) {
       const pin = new Container();
-      pin.position.set(item.point.x, item.point.y);
+      pin.position.set(item.world.x, item.world.y);
       const stem = new Graphics()
         .moveTo(0, 34)
         .lineTo(-15, 10)
@@ -242,7 +251,7 @@ export class WorldRenderer {
         .stroke({ width: 6, color: item.color, alpha: 1 });
       const dot = new Graphics().circle(0, 0, 10).fill({ color: item.color });
       const label = new Text({
-        text: item.label,
+        text: item.mapLabel,
         style: {
           fontFamily: "Arial, sans-serif",
           fontSize: 27,
@@ -255,6 +264,52 @@ export class WorldRenderer {
       label.position.set(0, 51);
       pin.addChild(stem, circle, dot, label);
       this.pinLayer.addChild(pin);
+    }
+  }
+
+  private addLandmarkButtons(): void {
+    for (const location of LOCATIONS) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "world-landmark";
+      button.dataset.locationId = location.id;
+      button.style.setProperty(
+        "--landmark-color",
+        `#${location.color.toString(16).padStart(6, "0")}`,
+      );
+      if (location.id === this.options.highlightedLocationId) {
+        button.classList.add("is-objective");
+      }
+      if (location.kind === "home") {
+        button.classList.add("is-home");
+      }
+      if (this.options.discoveryLocationIds?.includes(location.id)) {
+        button.classList.add("has-discovery");
+      }
+      const icon = document.createElement("span");
+      icon.className = "world-landmark__pin";
+      const glyph = document.createElement("span");
+      glyph.className = "world-landmark__glyph";
+      glyph.textContent = location.icon;
+      icon.append(glyph);
+      const label = document.createElement("span");
+      label.className = "world-landmark__label";
+      label.textContent =
+        location.kind === "home" && this.options.homeLabel
+          ? this.options.homeLabel
+          : location.mapLabel;
+      button.append(icon, label);
+      button.setAttribute(
+        "aria-label",
+        location.kind === "home"
+          ? `Runner-Home auf Inselkarte öffnen: ${this.options.homeLabel ?? location.label}`
+          : `${location.label} erkunden`,
+      );
+      button.addEventListener("click", () =>
+        this.options.onLocationSelect?.(location.id),
+      );
+      this.host.append(button);
+      this.landmarkButtons.push(button);
     }
   }
 
@@ -281,6 +336,16 @@ export class WorldRenderer {
     }
     const scale = Math.min(width / WORLD_WIDTH, height / WORLD_HEIGHT);
     this.world.scale.set(scale);
-    this.world.position.set((width - WORLD_WIDTH * scale) / 2, (height - WORLD_HEIGHT * scale) / 2);
+    const offsetX = (width - WORLD_WIDTH * scale) / 2;
+    const offsetY = (height - WORLD_HEIGHT * scale) / 2;
+    this.world.position.set(offsetX, offsetY);
+    for (const button of this.landmarkButtons) {
+      const location = LOCATIONS.find(
+        (candidate) => candidate.id === button.dataset.locationId,
+      );
+      if (!location) continue;
+      button.style.left = `${offsetX + location.world.x * scale}px`;
+      button.style.top = `${offsetY + location.world.y * scale}px`;
+    }
   }
 }

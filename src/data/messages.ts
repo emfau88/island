@@ -3,6 +3,7 @@ import type { MessageDefinition } from "../core/types";
 export const MESSAGES: MessageDefinition[] = [
   {
     id: "lola-intro",
+    characterId: "lola",
     sender: "Lola",
     preview: "Du bist doch der neue Runner, oder?",
     body: [
@@ -39,6 +40,7 @@ export const MESSAGES: MessageDefinition[] = [
   },
   {
     id: "lola-after-cocktail",
+    characterId: "lola",
     sender: "Lola",
     preview: "Okay, das war besser als erwartet.",
     body: [
@@ -75,6 +77,7 @@ export const MESSAGES: MessageDefinition[] = [
   },
   {
     id: "lola-after-ice",
+    characterId: "lola",
     sender: "Lola",
     preview: "Das Timing war fast verdächtig gut.",
     body: [
@@ -111,6 +114,7 @@ export const MESSAGES: MessageDefinition[] = [
   },
   {
     id: "lola-after-playlist",
+    characterId: "lola",
     sender: "Lola",
     preview: "Du bist jetzt offiziell mein Lieblings-Runner.",
     body: [
@@ -142,6 +146,115 @@ export const MESSAGES: MessageDefinition[] = [
         effects: { cash: 250, fans: 100 },
         flags: ["lola_slice_finished", "ending_business"],
         response: ["Schon wieder die Bezahlung.", "Ich respektiere die Konsequenz."],
+      },
+    ],
+  },
+  {
+    id: "mia-intro",
+    characterId: "mia",
+    sender: "Mia",
+    preview: "Lola sagt, du kannst diskret sein.",
+    body: [
+      "Lola sagt, du kannst diskret sein.",
+      "Ich brauche eine Fahrt von der Villa zum Club. Ein versiegelter Umschlag kommt mit. Keine Fotos, keine Namen.",
+    ],
+    requiredFlags: ["lola_slice_finished"],
+    replies: [
+      {
+        id: "mia-intro-discreet",
+        label: "Schick mir nur Zeit und Treffpunkt.",
+        hint: "Diskret",
+        effects: { trust: 5, mood: 1 },
+        flags: ["mia_documents_confirmed", "mia_plan_discreet"],
+        response: ["22:55. Obere Villa.", "Wenn du zu früh bist, wartest du. Wenn du zu spät bist, gehst du."],
+      },
+      {
+        id: "mia-intro-careful",
+        label: "Wer darf wissen, dass du im Wagen sitzt?",
+        hint: "Vorausschauend",
+        effects: { trust: 4, attraction: 1 },
+        flags: ["mia_documents_confirmed", "mia_plan_careful"],
+        response: ["Im Moment nur du.", "Villa. Und lass das Telefon im Wagen besser leise."],
+      },
+      {
+        id: "mia-intro-direct",
+        label: "Diskretion kostet. Ich bin trotzdem da.",
+        hint: "Geschäftlich",
+        effects: { cash: 150, trust: 2 },
+        flags: ["mia_documents_confirmed", "mia_plan_paid"],
+        response: ["Direkt. Gut.", "Das Honorar stimmt, wenn du auch den Rest ernst nimmst."],
+      },
+    ],
+  },
+  {
+    id: "mia-after-documents",
+    characterId: "mia",
+    sender: "Mia",
+    preview: "Die Übergabe war sauber. Wegen deines Hauses …",
+    body: [
+      "Die Übergabe war sauber.",
+      "Wegen deines Hauses an der Klippe: Dort lässt sich vermutlich ruhiger reden als im Club.",
+    ],
+    requiredFlags: ["mia_documents_complete"],
+    replies: [
+      {
+        id: "mia-home-private",
+        label: "Komm allein vorbei. Ich halte die Veranda frei.",
+        hint: "Privat",
+        effects: { attraction: 4, mood: 3 },
+        flags: ["mia_home_scene_pending", "mia_home_invite_private"],
+        response: ["Allein ist gut.", "Ich bin in zwanzig Minuten da."],
+        social: {
+          memories: [
+            {
+              id: "mia_private_invite_confirmed",
+              title: "Private Einladung",
+              description: "Mia hat eine Einladung angenommen, von der Lola nichts weiß.",
+              tone: "private",
+              knownBy: ["mia"],
+            },
+          ],
+        },
+      },
+      {
+        id: "mia-home-open",
+        label: "Lola kann dazukommen. Keine Geheimnisse.",
+        hint: "Offen",
+        effects: { trust: 4, mood: 1 },
+        flags: ["mia_home_scene_pending", "mia_home_invite_open"],
+        response: ["Ungewöhnlich vernünftig.", "Ich komme trotzdem zuerst. Lola meldet sich später."],
+        social: {
+          friendship: 3,
+          tension: -2,
+          memories: [
+            {
+              id: "mia_open_invite",
+              title: "Offene Einladung",
+              description: "Du hast Mia ausdrücklich gesagt, dass Lola ebenfalls willkommen ist.",
+              tone: "honest",
+              knownBy: ["mia"],
+            },
+          ],
+        },
+      },
+      {
+        id: "mia-home-business",
+        label: "Nur geschäftlich. Bring die Unterlagen mit.",
+        hint: "Professionell",
+        effects: { trust: 5 },
+        flags: ["mia_home_scene_pending", "mia_home_invite_business"],
+        response: ["Verstanden.", "Dann nennen wir es eine Nachbesprechung."],
+        social: {
+          memories: [
+            {
+              id: "mia_business_visit",
+              title: "Nachbesprechung im Bungalow",
+              description: "Du hast Mias Besuch ausdrücklich geschäftlich gehalten.",
+              tone: "professional",
+              knownBy: ["mia"],
+            },
+          ],
+        },
       },
     ],
   },

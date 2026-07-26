@@ -159,4 +159,33 @@ describe("MissionSystem", () => {
       "reward",
     ]);
   });
+
+  it("applies Mia's mission to Mia and stores asymmetric character knowledge", () => {
+    const initial = createInitialSave(10);
+    initial.flags.push("mia_documents_confirmed");
+    const mission = MISSIONS.find((candidate) => candidate.id === "mia-documents-01");
+    if (!mission) throw new Error("Missing Mia mission fixture.");
+    const lolaBefore = { ...initial.relationships.lola };
+    const miaBefore = { ...initial.relationships.mia };
+
+    let state = system.start(initial, mission.id, 20);
+    state = system.choosePickup(state, "mia-sealed-case");
+    state = system.chooseRoute(state, "villa-club-terraces");
+    state = system.chooseTravel(state, "mia-call-silence");
+    state = system.arrive(state);
+    state = system.complete(state, "mia-offer-home", 30);
+
+    expect(state.relationships.mia.trust).toBeGreaterThan(miaBefore.trust);
+    expect(state.relationships.mia.attraction).toBeGreaterThan(miaBefore.attraction);
+    expect(state.relationships.lola.trust).toBe(lolaBefore.trust);
+    expect(state.relationships.lola.mood).toBeLessThan(lolaBefore.mood);
+    expect(state.social.lolaMia.tension).toBe(13);
+    expect(
+      state.social.memories.find((memory) => memory.id === "mia_saw_ignored_call")?.knownBy,
+    ).toEqual(["mia"]);
+    expect(
+      state.social.memories.find((memory) => memory.id === "lola_call_ignored")?.knownBy,
+    ).toEqual(["lola"]);
+    expect(state.flags).toContain("mia_home_offer_made");
+  });
 });

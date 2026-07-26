@@ -23,16 +23,20 @@ async function completeMission(
     eventChoice: string;
     encounter: string;
     reply: string;
+    character?: string;
   },
 ): Promise<void> {
-  await page.getByRole("button", { name: new RegExp(`Lola am ${run.location} treffen`) }).click();
+  const character = run.character ?? "Lola";
+  await page
+    .getByRole("button", { name: new RegExp(`${character} am ${run.location} treffen`) })
+    .click();
   await page.locator(`[data-choice-id="${run.pickup}"]`).click();
   await expect(page.getByRole("heading", { name: "Welche Route passt zum Auftrag?" })).toBeVisible();
   await page.getByTestId(`route-${run.route}`).click();
   await finishTravelEvent(page, run.eventTitle, run.eventChoice);
   await page.locator(`[data-choice-id="${run.encounter}"]`).click();
   await expect(page.getByText("AUFTRAG ABGESCHLOSSEN")).toBeVisible();
-  await page.getByRole("button", { name: "Lolas Nachricht lesen" }).click();
+  await page.getByRole("button", { name: `${character}s Nachricht lesen` }).click();
   await page.locator(`[data-reply-id="${run.reply}"]`).click();
   await page.locator(".chat-continue").click();
 }
@@ -82,6 +86,216 @@ test("smartphone is a dismissible overlay over the live island, not the game she
   await page.getByRole("button", { name: "Smartphone schließen" }).click();
   await expect(phone).toBeHidden();
   await expect(page.locator(".world-canvas")).toBeVisible();
+});
+
+test("island landmarks open local exploration and persist discoveries", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-390", "Canonical exploration flow runs once.");
+  await expect(page.locator('.world-host[data-ready="true"]')).toBeVisible();
+
+  await page.getByRole("button", { name: "Pool erkunden" }).click();
+  await expect(page.getByRole("dialog", { name: "Pool" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hier vor Ort" })).toBeVisible();
+  await page.getByRole("button", { name: "Unauffällig zuhören" }).click();
+  await expect(page.getByText("Du kennst jetzt das ruhige Zeitfenster")).toBeVisible();
+  await expect(page.getByRole("button", { name: "✓ Erledigt" })).toBeDisabled();
+  await expect(page.locator(".hud-metric.fans .hud-metric__value")).toHaveText("40");
+
+  await page.getByRole("button", { name: "‹ Inselkarte" }).click();
+  await page.reload();
+  await expect(page.locator('.world-host[data-ready="true"]')).toBeVisible();
+  await page.getByRole("button", { name: "Pool erkunden" }).click();
+  await expect(page.getByRole("button", { name: "✓ Erledigt" })).toBeDisabled();
+});
+
+test("runner home and Midnight Wing support an opt-in guest lifecycle", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-390", "Canonical Midnight Wing flow runs once.");
+  await page.evaluate(() => {
+    window.localStorage.setItem(
+      "island-runner-save",
+      JSON.stringify({
+        version: 5,
+        resources: { cash: 20_000, fans: 1_200, heat: 4 },
+        relationships: {
+          lola: { attraction: 42, trust: 45, mood: 58 },
+          mia: { attraction: 18, trust: 30, mood: 54 },
+        },
+        property: { tier: "bungalow", tutorialSeen: true },
+        social: {
+          lolaMia: { friendship: 45, tension: 10 },
+          memories: [],
+        },
+        exploration: {
+          visitedLocations: ["villa"],
+          discoveries: ["hidden_foundation_plan"],
+          completedActions: ["villa-foundation-plan"],
+        },
+        secretWing: {
+          level: 0,
+          tutorialSeen: false,
+          guests: {
+            lola: { status: "none", completedScenes: [] },
+            mia: { status: "none", completedScenes: [] },
+          },
+        },
+        flags: [
+          "onboarding_complete",
+          "lola_cocktail_complete",
+          "lola_ice_complete",
+          "lola_playlist_complete",
+          "lola_slice_finished",
+          "midnight_foundation_known",
+        ],
+        completedMissions: ["lola-cocktail-01", "lola-ice-02", "lola-playlist-03"],
+        missionStyles: {},
+        messages: [
+          { id: "lola-intro", read: true, unlockedAt: 1, replyId: "intro-reliable" },
+          { id: "lola-after-cocktail", read: true, unlockedAt: 2, replyId: "ice-careful" },
+          { id: "lola-after-ice", read: true, unlockedAt: 3, replyId: "playlist-discreet" },
+          { id: "lola-after-playlist", read: true, unlockedAt: 4, replyId: "ending-loyal" },
+        ],
+        activeMission: null,
+        lastDecision: "Fundamentplan gefunden.",
+        settings: { sound: false, haptics: false },
+      }),
+    );
+  });
+  await page.reload();
+  await expect(page.locator('.world-host[data-ready="true"]')).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Runner-Home auf Inselkarte öffnen: Runner-Bungalow" })
+    .click();
+  await expect(page.getByRole("dialog", { name: "Runner-Bungalow" })).toBeVisible();
+  await page.getByRole("button", { name: "Geheimen Bereich prüfen" }).click();
+  await expect(page.getByRole("dialog", { name: "Versiegelter Hohlraum" })).toBeVisible();
+  await expect(page.getByText("jeder Gast kann jederzeit gehen")).toBeVisible();
+
+  await page.getByRole("button", { name: "Hidden Lounge ausbauen" }).click();
+  await expect(page.getByRole("dialog", { name: "Hidden Lounge" })).toBeVisible();
+  await expect(page.locator(".hud-metric.cash .hud-metric__value")).toHaveText("15.500");
+  const lolaGuest = page.locator(".secret-guest-card").filter({ hasText: "Lola" });
+  await lolaGuest.getByRole("button", { name: "Privat einladen" }).click();
+  await expect(page.getByText("Hat die Einladung angenommen")).toBeVisible();
+  await page.getByRole("button", { name: "Grenzen besprechen" }).click();
+  await expect(page.getByRole("button", { name: "✓ Grenzen besprechen" })).toBeDisabled();
+  await page.getByRole("button", { name: "Abreise ermöglichen" }).click();
+  await expect(page.getByText("Vertrauen 52%")).toBeVisible();
+
+  await page.reload();
+  await expect(page.locator('.world-host[data-ready="true"]')).toBeVisible();
+  await page
+    .getByRole("button", { name: "Runner-Home auf Inselkarte öffnen: Runner-Bungalow" })
+    .click();
+  await page.getByRole("button", { name: "Midnight Wing betreten" }).click();
+  await expect(page.getByRole("dialog", { name: "Hidden Lounge" })).toBeVisible();
+  await expect(
+    page
+      .locator(".secret-guest-card")
+      .filter({ hasText: "Lola" })
+      .getByRole("button", { name: "Privat einladen" }),
+  ).toBeVisible();
+});
+
+test("all message stages of one contact form a single continuous chat", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-390", "Canonical grouped-chat check runs once.");
+  await page.evaluate(() => {
+    window.localStorage.setItem(
+      "island-runner-save",
+      JSON.stringify({
+        version: 4,
+        resources: { cash: 7_400, fans: 990, heat: 3 },
+        relationships: {
+          lola: { attraction: 38, trust: 52, mood: 56 },
+          mia: { attraction: 4, trust: 8, mood: 50 },
+        },
+        property: { tier: "bungalow", tutorialSeen: true },
+        social: {
+          lolaMia: { friendship: 45, tension: 10 },
+          memories: [],
+        },
+        flags: [
+          "onboarding_complete",
+          "lola_cocktail_complete",
+          "lola_ice_complete",
+          "lola_playlist_complete",
+          "lola_slice_finished",
+        ],
+        completedMissions: ["lola-cocktail-01", "lola-ice-02", "lola-playlist-03"],
+        missionStyles: {},
+        messages: [
+          { id: "lola-intro", read: true, unlockedAt: 1, replyId: "intro-reliable" },
+          { id: "lola-after-cocktail", read: true, unlockedAt: 2, replyId: "ice-careful" },
+          { id: "lola-after-ice", read: true, unlockedAt: 3, replyId: "playlist-discreet" },
+          { id: "lola-after-playlist", read: true, unlockedAt: 4, replyId: "ending-loyal" },
+          { id: "mia-intro", read: false, unlockedAt: 5 },
+        ],
+        activeMission: null,
+        lastDecision: "Dann bleibe ich dein Runner.",
+        settings: { sound: false, haptics: false },
+      }),
+    );
+  });
+  await page.reload();
+  await page.locator(".phone-button").click();
+
+  const phone = page.getByTestId("phone-overlay");
+  await expect(phone.locator(".message-row")).toHaveCount(2);
+  await expect(phone.locator('[data-character-id="lola"]')).toHaveCount(1);
+  await expect(phone.locator('[data-character-id="mia"]')).toHaveCount(1);
+
+  await phone.locator('[data-character-id="lola"]').click();
+  await expect(phone.locator(".chat-header strong")).toHaveText("Lola");
+  const thread = phone.locator(".chat-thread");
+  await expect(thread).toContainText("Du bist doch der neue Runner, oder?");
+  await expect(thread).toContainText("Okay, das war besser als erwartet.");
+  await expect(thread).toContainText("Das Timing war fast verdächtig gut.");
+  await expect(thread).toContainText("Du bist jetzt offiziell mein Lieblings-Runner.");
+  await expect(thread.locator(".chat-bubble--player")).toHaveCount(4);
+  await expect(phone.locator(".chat-header").getByText("4 Nachrichtenetappen")).toBeVisible();
+});
+
+test("property upgrade is visible, consequential and survives reload", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-390", "Canonical property flow runs at 390 × 844.");
+  await page.evaluate(() => {
+    window.localStorage.setItem(
+      "island-runner-save",
+      JSON.stringify({
+        version: 3,
+        resources: { cash: 2_500, fans: 250, heat: 5 },
+        relationships: { lola: { attraction: 20, trust: 24, mood: 56 } },
+        property: { tier: "shack", tutorialSeen: false },
+        flags: ["onboarding_complete", "lola_cocktail_complete"],
+        completedMissions: ["lola-cocktail-01"],
+        missionStyles: { "lola-cocktail-01": "Verlässlich" },
+        messages: [
+          { id: "lola-intro", read: true, unlockedAt: 1, replyId: "intro-reliable" },
+          { id: "lola-after-cocktail", read: true, unlockedAt: 2, replyId: "ice-careful" },
+        ],
+        activeMission: null,
+        lastDecision: "Ich fahre zuverlässig.",
+        settings: { sound: false, haptics: false },
+      }),
+    );
+  });
+  await page.reload();
+
+  await page.getByRole("button", { name: "Zuhause öffnen: Strandhütte" }).click();
+  await expect(page.getByRole("dialog", { name: "Strandhütte" })).toBeVisible();
+  await expect(page.getByText("Vertrauen bleibt eine Frage deiner Entscheidungen.")).toBeVisible();
+
+  await page.getByRole("button", { name: "Runner-Bungalow für $ 2.000 bauen" }).click();
+  await expect(page.getByText("AUSBAU ABGESCHLOSSEN")).toBeVisible();
+  await expect(page.getByText("Das Anwesen macht Eindruck. Vertrauen verdienst du weiterhin")).toBeVisible();
+  await expect(page.locator(".hud-metric.cash .hud-metric__value")).toHaveText("500");
+  await page.screenshot({ path: path.join(screenshots, "12-property-bungalow.png") });
+
+  await page.getByRole("button", { name: "Neues Anwesen ansehen" }).click();
+  await expect(page.getByRole("dialog", { name: "Runner-Bungalow" })).toBeVisible();
+  await page.getByRole("button", { name: "Anwesen schließen" }).click();
+  await page.reload();
+
+  await expect(page.getByRole("button", { name: "Zuhause öffnen: Runner-Bungalow" })).toBeVisible();
+  await expect(page.locator(".hud-metric.cash .hud-metric__value")).toHaveText("500");
 });
 
 test("onboarding, paused travel event, outcome and message reply form one causal loop", async ({ page }, testInfo) => {
@@ -185,8 +399,98 @@ test("all three Lola missions and reply gates are playable without a softlock", 
     reply: "ending-loyal",
   });
 
-  await expect(page.getByRole("heading", { name: "Du bist jetzt Insider." })).toBeVisible();
-  await expect(page.getByText(/Runner-Status:/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mia wartet auf dich." })).toBeVisible();
+  await expect(page.getByText("Lola sagt, du kannst diskret sein.")).toBeVisible();
+});
+
+test("Mia mission creates private social memory and a playable bungalow scene", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-390", "Canonical Mia slice runs once.");
+  test.setTimeout(60_000);
+  await page.evaluate(() => {
+    window.localStorage.setItem(
+      "island-runner-save",
+      JSON.stringify({
+        version: 4,
+        resources: { cash: 1_000, fans: 900, heat: 8 },
+        relationships: {
+          lola: { attraction: 35, trust: 46, mood: 54 },
+          mia: { attraction: 4, trust: 8, mood: 50 },
+        },
+        property: { tier: "bungalow", tutorialSeen: true },
+        social: {
+          lolaMia: { friendship: 45, tension: 10 },
+          memories: [],
+        },
+        flags: [
+          "onboarding_complete",
+          "lola_cocktail_complete",
+          "lola_ice_confirmed",
+          "lola_ice_complete",
+          "lola_playlist_confirmed",
+          "lola_playlist_complete",
+          "lola_slice_finished",
+          "ending_loyal",
+        ],
+        completedMissions: ["lola-cocktail-01", "lola-ice-02", "lola-playlist-03"],
+        missionStyles: {
+          "lola-cocktail-01": "Verlässlich",
+          "lola-ice-02": "Verlässlich",
+          "lola-playlist-03": "Verlässlich",
+        },
+        messages: [
+          { id: "lola-intro", read: true, unlockedAt: 1, replyId: "intro-reliable" },
+          { id: "lola-after-cocktail", read: true, unlockedAt: 2, replyId: "ice-careful" },
+          { id: "lola-after-ice", read: true, unlockedAt: 3, replyId: "playlist-discreet" },
+          { id: "lola-after-playlist", read: true, unlockedAt: 4, replyId: "ending-loyal" },
+          { id: "mia-intro", read: false, unlockedAt: 5 },
+        ],
+        activeMission: null,
+        lastDecision: "Dann bleibe ich dein Runner.",
+        settings: { sound: false, haptics: false },
+      }),
+    );
+  });
+  await page.reload();
+
+  await page.getByRole("button", { name: "Smartphone öffnen", exact: true }).click();
+  await expect(
+    page.getByTestId("phone-overlay").getByText("Lola sagt, du kannst diskret sein."),
+  ).toBeVisible();
+  await page.locator('[data-reply-id="mia-intro-careful"]').click();
+  await page.getByRole("button", { name: /Smartphone schließen · Villa/ }).click();
+
+  await completeMission(page, {
+    character: "Mia",
+    location: "Villa",
+    pickup: "mia-sealed-case",
+    route: "villa-club-terraces",
+    eventTitle: "Lolas Anruf",
+    eventChoice: "mia-call-boundary",
+    encounter: "mia-offer-home",
+    reply: "mia-home-private",
+  });
+
+  await expect(page.getByRole("heading", { name: "Mia ist unterwegs." })).toBeVisible();
+  await page.getByRole("button", { name: "Mia im Anwesen treffen" }).click();
+  await expect(page.getByRole("heading", { name: "Mia im Runner-Bungalow" })).toBeVisible();
+  await page.locator('[data-choice-id="mia-home-closer"]').click();
+  await expect(page.getByText("Ein privater Abend")).toBeVisible();
+  await page.screenshot({ path: path.join(screenshots, "13-mia-private-memory.png") });
+  await page.getByRole("button", { name: "Soziales Gedächtnis ansehen" }).click();
+
+  const phone = page.getByTestId("phone-overlay");
+  await expect(phone.getByRole("heading", { name: "Mia", exact: true })).toBeVisible();
+  await expect(
+    phone.getByText("Mia und du seid euch im Bungalow nähergekommen."),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Lola" }).click();
+  await expect(
+    phone.getByText("Mia und du seid euch im Bungalow nähergekommen."),
+  ).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Smartphone schließen" }).click();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Die Insel wird persönlich." })).toBeVisible();
 });
 
 test("reload restores a genuinely different negative reaction", async ({ page }, testInfo) => {

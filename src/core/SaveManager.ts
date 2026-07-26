@@ -4,15 +4,37 @@ import {
   ZERO_EFFECTS,
   clamp,
   type ActiveMissionRun,
+  type CharacterId,
   type EffectLogEntry,
   type Effects,
+  type ExplorationState,
+  type GuestStayStatus,
+  type LocationId,
   type MessageState,
+  type PropertyState,
+  type PropertyTierId,
   type Reaction,
   type SaveState,
+  type SecretWingState,
+  type SocialMemoryTone,
+  type SocialState,
 } from "./types";
 
 const SAVE_KEY = "island-runner-save";
 const REACTIONS: Reaction[] = ["neutral", "positive", "flirty", "serious", "annoyed", "surprised"];
+const PROPERTY_TIERS: PropertyTierId[] = ["shack", "bungalow", "pool-house", "villa"];
+const CHARACTER_IDS: CharacterId[] = ["lola", "mia"];
+const LOCATION_IDS: LocationId[] = [
+  "pool",
+  "yacht",
+  "villa",
+  "club",
+  "bar",
+  "dock",
+  "runner-home",
+];
+const GUEST_STATUSES: GuestStayStatus[] = ["none", "staying", "left"];
+const SOCIAL_TONES: SocialMemoryTone[] = ["warm", "honest", "tense", "private", "professional"];
 const PHASES: ActiveMissionRun["phase"][] = ["pickup", "route", "travel", "encounter"];
 const EFFECT_SOURCES: EffectLogEntry["source"][] = [
   "pickup",
@@ -161,6 +183,150 @@ function parseMissionStyles(value: unknown): Record<string, string> {
   return styles;
 }
 
+function parseProperty(value: unknown, isLegacy: boolean): PropertyState | null {
+  if (isLegacy) {
+    return { tier: "shack", tutorialSeen: false };
+  }
+  if (
+    !isRecord(value) ||
+    !PROPERTY_TIERS.includes(value.tier as PropertyTierId) ||
+    typeof value.tutorialSeen !== "boolean"
+  ) {
+    return null;
+  }
+  return {
+    tier: value.tier as PropertyTierId,
+    tutorialSeen: value.tutorialSeen,
+  };
+}
+
+function parseSocial(value: unknown, isLegacy: boolean): SocialState | null {
+  if (isLegacy) {
+    return {
+      lolaMia: { friendship: 45, tension: 10 },
+      memories: [],
+    };
+  }
+  if (!isRecord(value) || !isRecord(value.lolaMia) || !Array.isArray(value.memories)) {
+    return null;
+  }
+  const friendship = finite(value.lolaMia.friendship, Number.NaN);
+  const tension = finite(value.lolaMia.tension, Number.NaN);
+  if (!Number.isFinite(friendship) || !Number.isFinite(tension)) return null;
+
+  const memories: SocialState["memories"] = [];
+  for (const item of value.memories) {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== "string" ||
+      typeof item.title !== "string" ||
+      typeof item.description !== "string" ||
+      !SOCIAL_TONES.includes(item.tone as SocialMemoryTone) ||
+      !Array.isArray(item.knownBy) ||
+      !item.knownBy.every((id) => CHARACTER_IDS.includes(id as CharacterId)) ||
+      typeof item.createdAt !== "number" ||
+      !Number.isFinite(item.createdAt)
+    ) {
+      continue;
+    }
+    if (!memories.some((memory) => memory.id === item.id)) {
+      memories.push({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        tone: item.tone as SocialMemoryTone,
+        knownBy: [...new Set(item.knownBy as CharacterId[])],
+        createdAt: item.createdAt,
+      });
+    }
+  }
+  return {
+    lolaMia: {
+      friendship: clamp(Math.round(friendship)),
+      tension: clamp(Math.round(tension)),
+    },
+    memories,
+  };
+}
+
+function parseExploration(
+  value: unknown,
+  isLegacy: boolean,
+): ExplorationState | null {
+  if (isLegacy) {
+    return {
+      visitedLocations: [],
+      discoveries: [],
+      completedActions: [],
+    };
+  }
+  if (!isRecord(value)) return null;
+  const visitedLocations = Array.isArray(value.visitedLocations)
+    ? uniqueLocationIds(value.visitedLocations)
+    : null;
+  if (!visitedLocations) return null;
+  return {
+    visitedLocations,
+    discoveries: stringArray(value.discoveries),
+    completedActions: stringArray(value.completedActions),
+  };
+}
+
+function uniqueLocationIds(value: unknown[]): LocationId[] | null {
+  if (!value.every((item) => LOCATION_IDS.includes(item as LocationId))) {
+    return null;
+  }
+  return [...new Set(value as LocationId[])];
+}
+
+function parseSecretWing(
+  value: unknown,
+  isLegacy: boolean,
+): SecretWingState | null {
+  const empty: SecretWingState = {
+    level: 0,
+    tutorialSeen: false,
+    guests: {
+      lola: { status: "none", completedScenes: [] },
+      mia: { status: "none", completedScenes: [] },
+    },
+  };
+  if (isLegacy) return empty;
+  if (
+    !isRecord(value) ||
+    ![0, 1, 2, 3].includes(value.level as number) ||
+    typeof value.tutorialSeen !== "boolean" ||
+    !isRecord(value.guests)
+  ) {
+    return null;
+  }
+  const guests = { ...empty.guests };
+  for (const characterId of CHARACTER_IDS) {
+    const guest = value.guests[characterId];
+    if (
+      !isRecord(guest) ||
+      !GUEST_STATUSES.includes(guest.status as GuestStayStatus)
+    ) {
+      return null;
+    }
+    const invitedAt = finite(guest.invitedAt, Number.NaN);
+    const acceptedAt = finite(guest.acceptedAt, Number.NaN);
+    const leftAt = finite(guest.leftAt, Number.NaN);
+    guests[characterId] = {
+      status: guest.status as GuestStayStatus,
+      completedScenes: stringArray(guest.completedScenes),
+      ...(Number.isFinite(invitedAt) ? { invitedAt } : {}),
+      ...(Number.isFinite(acceptedAt) ? { acceptedAt } : {}),
+      ...(Number.isFinite(leftAt) ? { leftAt } : {}),
+    };
+  }
+  return {
+    level: value.level as SecretWingState["level"],
+    tutorialSeen: value.tutorialSeen,
+    guests,
+  };
+}
+
 function migrateLegacyProgress(
   flags: string[],
   completedMissions: string[],
@@ -199,7 +365,7 @@ function migrateLegacyProgress(
 
 export function createInitialSave(now = Date.now()): SaveState {
   return {
-    version: 2,
+    version: 5,
     resources: {
       cash: 0,
       fans: 0,
@@ -210,6 +376,35 @@ export function createInitialSave(now = Date.now()): SaveState {
         attraction: 12,
         trust: 10,
         mood: 50,
+      },
+      mia: {
+        attraction: 4,
+        trust: 8,
+        mood: 50,
+      },
+    },
+    property: {
+      tier: "shack",
+      tutorialSeen: false,
+    },
+    social: {
+      lolaMia: {
+        friendship: 45,
+        tension: 10,
+      },
+      memories: [],
+    },
+    exploration: {
+      visitedLocations: [],
+      discoveries: [],
+      completedActions: [],
+    },
+    secretWing: {
+      level: 0,
+      tutorialSeen: false,
+      guests: {
+        lola: { status: "none", completedScenes: [] },
+        mia: { status: "none", completedScenes: [] },
       },
     },
     flags: [],
@@ -226,7 +421,14 @@ export function createInitialSave(now = Date.now()): SaveState {
 }
 
 export function validateSave(value: unknown): SaveState | null {
-  if (!isRecord(value) || (value.version !== 1 && value.version !== 2)) {
+  if (
+    !isRecord(value) ||
+    (value.version !== 1 &&
+      value.version !== 2 &&
+      value.version !== 3 &&
+      value.version !== 4 &&
+      value.version !== 5)
+  ) {
     return null;
   }
   if (!isRecord(value.resources) || !isRecord(value.relationships) || !isRecord(value.relationships.lola)) {
@@ -242,7 +444,19 @@ export function validateSave(value: unknown): SaveState | null {
   const attraction = finite(value.relationships.lola.attraction, Number.NaN);
   const trust = finite(value.relationships.lola.trust, Number.NaN);
   const mood = finite(value.relationships.lola.mood, Number.NaN);
-  if ([cash, fans, heat, attraction, trust, mood].some((number) => !Number.isFinite(number))) {
+  const miaRelationship =
+    value.version >= 4 && isRecord(value.relationships.mia)
+      ? {
+          attraction: finite(value.relationships.mia.attraction, Number.NaN),
+          trust: finite(value.relationships.mia.trust, Number.NaN),
+          mood: finite(value.relationships.mia.mood, Number.NaN),
+        }
+      : { attraction: 4, trust: 8, mood: 50 };
+  if (
+    [cash, fans, heat, attraction, trust, mood, ...Object.values(miaRelationship)].some(
+      (number) => !Number.isFinite(number),
+    )
+  ) {
     return null;
   }
   const completedMissions = stringArray(value.completedMissions);
@@ -258,9 +472,16 @@ export function validateSave(value: unknown): SaveState | null {
         haptics: typeof value.settings.haptics === "boolean" ? value.settings.haptics : true,
       }
     : { sound: true, haptics: true };
+  const property = parseProperty(value.property, value.version < 3);
+  const social = parseSocial(value.social, value.version < 4);
+  const exploration = parseExploration(value.exploration, value.version < 5);
+  const secretWing = parseSecretWing(value.secretWing, value.version < 5);
+  if (!property || !social || !exploration || !secretWing) {
+    return null;
+  }
 
   return {
-    version: 2,
+    version: 5,
     resources: {
       cash: Math.max(0, Math.round(cash)),
       fans: Math.max(0, Math.round(fans)),
@@ -272,7 +493,16 @@ export function validateSave(value: unknown): SaveState | null {
         trust: clamp(Math.round(trust)),
         mood: clamp(Math.round(mood)),
       },
+      mia: {
+        attraction: clamp(Math.round(miaRelationship.attraction)),
+        trust: clamp(Math.round(miaRelationship.trust)),
+        mood: clamp(Math.round(miaRelationship.mood)),
+      },
     },
+    property,
+    social,
+    exploration,
+    secretWing,
     flags: migrated.flags,
     completedMissions,
     missionStyles: parseMissionStyles(value.missionStyles),
