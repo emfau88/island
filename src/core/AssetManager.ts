@@ -5,6 +5,7 @@ const BASE = import.meta.env.BASE_URL;
 export const ASSETS = {
   world: `${BASE}assets/world/island-night.webp`,
   pool: `${BASE}assets/locations/pool/pool-night.webp`,
+  poolGuests: `${BASE}assets/locations/pool/pool-guests.png`,
   yacht: `${BASE}assets/locations/yacht/yacht-dock-night.webp`,
   portrait: `${BASE}assets/characters/lola/lola-portrait.webp`,
   miaPortrait: `${BASE}assets/characters/mia/mia-portrait.webp`,
@@ -26,6 +27,15 @@ const LOLA_REACTIONS: Record<Reaction, string> = {
   surprised: `${BASE}assets/characters/lola/lola-surprised.png`,
 };
 
+const LOLA_POOL_REACTIONS: Record<Reaction, string> = {
+  neutral: `${BASE}assets/characters/lola/lola-pool-neutral.png`,
+  positive: `${BASE}assets/characters/lola/lola-pool-positive.png`,
+  flirty: `${BASE}assets/characters/lola/lola-pool-positive.png`,
+  serious: `${BASE}assets/characters/lola/lola-pool-serious.png`,
+  annoyed: `${BASE}assets/characters/lola/lola-pool-serious.png`,
+  surprised: `${BASE}assets/characters/lola/lola-pool-positive.png`,
+};
+
 const MIA_REACTIONS: Record<Reaction, string> = {
   neutral: `${BASE}assets/characters/mia/mia-neutral.png`,
   positive: `${BASE}assets/characters/mia/mia-positive.png`,
@@ -41,6 +51,15 @@ export function characterPortrait(characterId: CharacterId): string {
 
 export function reactionAsset(reaction: Reaction, characterId: CharacterId = "lola"): string {
   return characterId === "mia" ? MIA_REACTIONS[reaction] : LOLA_REACTIONS[reaction];
+}
+
+export function poolReactionAsset(
+  reaction: Reaction,
+  characterId: CharacterId,
+): string {
+  return characterId === "lola"
+    ? LOLA_POOL_REACTIONS[reaction]
+    : MIA_REACTIONS[reaction];
 }
 
 export async function preloadReaction(

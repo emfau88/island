@@ -53,7 +53,17 @@
 - [ ] Kylie mit drei Missionen und Club-Zugang
 - [ ] Terminkonflikte statt beliebiger Fahrtentscheidungen
 - [ ] faire Eifersucht nur bei bekannter Ursache
-- [ ] Gruppenszenen am Pool, im Club und später in der Villa
+- [x] erste persistente Social Scene mit Lola, Mia und Gruppenszene am Pool
+- [ ] Social-Scene-System auf Club und Villa ausweiten
 - [ ] Jessica und Island Manager als weitere soziale Rollen
+
+## Phase 2.2 – Abwechslungsreicher Weltloop
+
+- [x] persistenter Welt-Renderer ohne Kontextverlust nach langen Questketten
+- [x] straßentreue, geglättete Fahrzeugpfade mit echten Zufahrtsankern
+- [x] sichtbarer Vollbild-Toggle und freie Anwesenansicht
+- [x] direkte Figuren- und Umgebungs-Hotspots am Pool
+- [ ] zwei nicht fahrbasierte Aktivitäten in Villa und Club
+- [ ] sichtbare Charakterpläne und wechselnde Aufenthaltsorte
 
 Neue Figuren, Locations oder Systeme werden nur ergänzt, wenn sie einen klaren Platz im Kernloop besitzen.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialSave } from "../../src/core/SaveManager";
+import { LOCATION_ACTIVITIES } from "../../src/data/locationContent";
 import { ExplorationSystem } from "../../src/systems/ExplorationSystem";
 
 describe("ExplorationSystem", () => {
@@ -39,5 +40,16 @@ describe("ExplorationSystem", () => {
       ({ definition }) => definition.id === "dock-sealed-crate",
     );
     expect(unlocked?.status.unlocked).toBe(true);
+  });
+
+  it("gives every activity a valid visual story spot", () => {
+    for (const activity of LOCATION_ACTIVITIES) {
+      expect(activity.visual.sceneLabel.length).toBeGreaterThan(2);
+      expect(activity.visual.icon.length).toBeGreaterThan(0);
+      expect(activity.visual.x).toBeGreaterThanOrEqual(10);
+      expect(activity.visual.x).toBeLessThanOrEqual(90);
+      expect(activity.visual.y).toBeGreaterThanOrEqual(20);
+      expect(activity.visual.y).toBeLessThanOrEqual(80);
+    }
   });
 });

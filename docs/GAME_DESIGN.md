@@ -42,6 +42,10 @@ Das Anwesen ist ein sichtbarer sozialer Ort und kein Idle-Builder. Höhere Stufe
 
 Alle wichtigen Gebäude sind auf der Inselkarte direkt anwählbar. Jeder Ort besitzt eine lokale Ansicht, mögliche Treffpunkte und eine kleine Zahl handgebauter Aktionen. Aktionen sind einmalig statt grindbar: Sie liefern Hinweise, Vorbereitungen oder konkrete Ressourcenfolgen. Hinweise können neue Handlungen an anderen Orten freischalten.
 
+Ortsaktivitäten erscheinen nicht als technische Aufgabenliste. Leuchtende Story-Spots liegen auf konkreten Details der Kulisse. Erst ein Antippen öffnet die kurze Beobachtung, ihre mögliche Konsequenz und eine verständliche Handlung. Gesperrte Inhalte bleiben unsichtbar, bis die Geschichte sie plausibel macht.
+
+Die Pool-Social-Scene ist die erste Blaupause für direkte Welterkundung: Figuren werden als perspektivisch platzierte Layer in die unveränderte Kulisse komponiert. Personen und Umgebungsdetails sind unmittelbar antippbar; ein zunächst eingeklappter Informationsbereich hält das Szenenbild frei. Verfügbarkeit und Gesprächsoptionen folgen dem Storyfortschritt.
+
 ## Midnight Wing
 
 Ein alter Fundamentplan in der Villa eröffnet unter dem Runner-Home einen dreistufigen Ausbaupfad. Der Midnight Wing ist ein mysteriöser privater Club- und Story-Bereich. Einladungen, Aufenthaltsphasen und ihr Abschluss werden durch Vertrauen, Regeln und spätere Storybedingungen gesteuert. Gemeinsame Aufenthalte beeinflussen Freundschaft und Spannung nachvollziehbar.

@@ -40,6 +40,7 @@
 - [x] keine horizontalen Überläufe
 - [x] Touchflächen mindestens 44 CSS-Pixel
 - [x] reduzierte Bewegung berücksichtigt
+- [x] Vollbild ist direkt im HUD erreichbar
 
 ## Anwesen
 
@@ -50,6 +51,7 @@
 - [x] Bild, Stufe und Kontaktstatus wechseln nach Ausbau
 - [x] Lola-Einweihung ist schließbar und touchfreundlich
 - [x] Anwesen und Cash überleben einen Reload
+- [x] vollständiges Szenenbild ist ohne verdeckendes Panel erreichbar
 
 ## Mia und soziales Gedächtnis
 
@@ -67,6 +69,9 @@
 - [x] alle sieben Landmarks sind per Tastatur und Touch erreichbar
 - [x] Treffpunkt und freie Ortsaktionen teilen dieselbe lokale Ansicht
 - [x] Ortsbesuche, Hinweise und abgeschlossene Aktionen überleben Reload
+- [x] freie Ortsaktionen erscheinen als beschriftete Story-Spots direkt in der Kulisse statt als technische Liste
+- [x] der Location-Drawer bleibt zunächst kompakt und verdeckt die Kulisse erst nach bewusster Auswahl
+- [x] das Poolgespräch zeigt die zwei erwähnten Hintergrundgäste tatsächlich im Bild
 - [x] einmalige Aktionen können nicht doppelt vergütet werden
 - [x] Bar-Hinweis schaltet die passende Dock-Entdeckung frei
 - [x] Runner-Home ist auf der Karte sichtbar und öffnet den Social Hub
@@ -74,6 +79,10 @@
 - [x] Einladungen prüfen Vertrauen und freie Gästekapazität
 - [x] Regeln, private Erinnerung und Abschluss eines Aufenthalts sind persistent
 - [x] neue Ansichten verursachen keine Browserfehler
+- [x] Pool-Social-Scene zeigt Lola und Mia als direkt antippbare Weltfiguren
+- [x] Lola bleibt am Pool konsequent in Swimwear und wechselt passend zwischen drei Posen
+- [x] Poolgespräche und Gruppenszene werden genau einmal gespeichert
+- [x] Pixi-Renderer bleibt über die vollständige Lola-Kette stabil
 
 ## Veröffentlichung
 

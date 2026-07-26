@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.7.0 – Social Pool & Stable World
+
+- persistenter Pixi-Renderer verhindert WebGL-Kontextwechsel und den schwarzen Hub nach langen Questketten
+- Render-Epochen schützen vor verspäteten asynchronen Szenen, die eine neuere Welt überschreiben
+- dicht geglättete Fahrpfade mit getrennten Straßen-Ankern statt Querfeldein-Linien zwischen Gebäude-Pins
+- kleineres Fahrzeug mit zur Fahrbahn passender Skalierung und Ausrichtung
+- jederzeit sichtbarer Vollbild-Toggle direkt im HUD
+- vollständig sichtbares Runner-Home mit normal fließendem Detailbereich
+- eigener Anwesen-Bildmodus zum Ausblenden der Ausbauoberfläche
+- erste interaktive Pool-Social-Scene mit sichtbaren, antippbaren Figuren und Bild-Hotspots
+- drei eigens freigestellte Lola-Poolposen in konsistentem Resort-Swimwear-Look für neutral, positiv und ernst
+- Story-Spots ersetzen technische Ortslisten: Entdeckungen werden direkt im Location-Bild gefunden und ausgespielt
+- zwei sichtbare Poolgäste verbinden den Hinweis „Gespräch am Beckenrand“ mit der tatsächlich gezeigten Szene
+- bildbasierte Entdeckungs-Drawer mit Ortsausschnitt, natürlicher Handlungsaufforderung und persistentem Ergebnis
+- fünf persistente Lola-, Mia- und Gruppenszenen mit sozialem Gedächtnis
+- neue Route-, Pool-, Renderer-, Mobile- und Persistenztests
+
 ## 0.6.0 – Mobile UX
 
 - unveränderte Inselkarte ohne stilfremde, gezeichnete Effekt-Overlays

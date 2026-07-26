@@ -12,13 +12,19 @@ import { PropertySystem } from "../systems/PropertySystem";
 import { HomeSceneSystem } from "../systems/HomeSceneSystem";
 import { ExplorationSystem } from "../systems/ExplorationSystem";
 import { SecretWingSystem } from "../systems/SecretWingSystem";
+import { PoolSceneSystem } from "../systems/PoolSceneSystem";
 import {
   getHeatTier,
   getRelationshipTier,
   relationshipScore,
 } from "../systems/ProgressionSystem";
 import { CharacterReactionController } from "../systems/ReactionSystem";
-import { preloadReaction, reactionAsset, ASSETS } from "./AssetManager";
+import {
+  preloadReaction,
+  poolReactionAsset,
+  reactionAsset,
+  ASSETS,
+} from "./AssetManager";
 import { EventBus } from "./EventBus";
 import { SaveManager } from "./SaveManager";
 import { StateMachine } from "./StateMachine";
@@ -124,6 +130,7 @@ export class Game {
   private readonly homeScenes = new HomeSceneSystem();
   private readonly exploration = new ExplorationSystem();
   private readonly secretWing = new SecretWingSystem();
+  private readonly poolScene = new PoolSceneSystem();
   private readonly feedback = new FeedbackSystem();
   private readonly events = new EventBus<GameEvents>();
   private state = this.saveManager.load();
@@ -133,6 +140,7 @@ export class Game {
   private selectedContactId: CharacterId = "lola";
   private phoneOverlay: HTMLElement | null = null;
   private world: WorldRenderer | null = null;
+  private renderEpoch = 0;
   private readonly shell = el("div", "app-shell");
   private readonly hud = el("header", "top-hud");
   private readonly stage = el("main", "game-stage");
@@ -145,6 +153,7 @@ export class Game {
     this.root.replaceChildren(this.shell);
     this.events.on("toast", (message) => this.showToast(message));
     this.feedback.configure(this.state.settings);
+    document.addEventListener("fullscreenchange", () => this.renderHud());
   }
 
   public async start(): Promise<void> {
@@ -152,6 +161,7 @@ export class Game {
   }
 
   private async render(): Promise<void> {
+    const epoch = ++this.renderEpoch;
     this.phoneOverlay?.remove();
     this.phoneOverlay = null;
     this.world?.destroy();
@@ -163,16 +173,16 @@ export class Game {
 
     switch (this.machine.current) {
       case "hub":
-        await this.renderHub();
+        await this.renderHub(epoch);
         break;
       case "pickup":
         this.renderPickup();
         break;
       case "route":
-        await this.renderRoute();
+        await this.renderRoute(epoch);
         break;
       case "travel":
-        await this.renderTravel();
+        await this.renderTravel(epoch);
         break;
       case "encounter":
         this.renderEncounter();
@@ -210,7 +220,23 @@ export class Game {
       this.openMenu();
     });
     menu.setAttribute("aria-label", "Menü öffnen");
-    actions.append(phone, menu);
+    const fullscreen = button(
+      "icon-button fullscreen-button",
+      "⛶",
+      () => {
+        this.feedback.tap();
+        void this.toggleFullscreen();
+      },
+    );
+    fullscreen.setAttribute(
+      "aria-label",
+      document.fullscreenElement ? "Vollbild beenden" : "Vollbild starten",
+    );
+    fullscreen.title = document.fullscreenElement
+      ? "Vollbild beenden"
+      : "Vollbild starten";
+    fullscreen.classList.toggle("is-active", Boolean(document.fullscreenElement));
+    actions.append(phone, fullscreen, menu);
     this.hud.append(resources, actions);
   }
 
@@ -226,7 +252,7 @@ export class Game {
     this.missionBar.append(status, abort);
   }
 
-  private async renderHub(): Promise<void> {
+  private async renderHub(epoch: number): Promise<void> {
     const screen = el("section", "screen map-screen world-screen");
     screen.setAttribute("aria-labelledby", "hub-title");
     const worldHost = el("div", "world-host");
@@ -347,14 +373,15 @@ export class Game {
 
     screen.append(brief);
     this.stage.append(screen);
-    this.world = new WorldRenderer(worldHost);
+    const world = new WorldRenderer(worldHost);
+    this.world = world;
     const objective = available[0]?.startLocation;
     const discoveryLocations = LOCATIONS.filter((location) =>
       this.exploration
         .activities(this.state, location.id)
         .some(({ status }) => status.unlocked),
     ).map((location) => location.id);
-    await this.world.init("hub", [], {
+    await world.init("hub", [], {
       highlightedLocationId: objective,
       homeLabel: this.property.current(this.state).label,
       discoveryLocationIds: discoveryLocations,
@@ -367,6 +394,10 @@ export class Game {
         }
       },
     });
+    if (epoch !== this.renderEpoch || !worldHost.isConnected) {
+      world.destroy();
+      if (this.world === world) this.world = null;
+    }
   }
 
   private openPhone(tab: PhoneTab = this.phoneTab, messageId?: string): void {
@@ -423,6 +454,10 @@ export class Game {
       this.events.emit("toast", "Orte kannst du zwischen den Aufträgen erkunden.");
       return;
     }
+    if (locationId === "pool" && this.poolScene.actors(this.state).length > 0) {
+      this.openPoolScene();
+      return;
+    }
 
     const location = getLocation(locationId);
     const visitedState = this.exploration.visit(this.state, locationId);
@@ -442,22 +477,50 @@ export class Game {
     background.src = location.asset;
     background.alt = `Nächtliche Ansicht: ${location.label}`;
     const shade = el("div", "local-location-shade");
+    const ambientPoolGuests =
+      locationId === "pool"
+        ? el("img", "local-location-ambient-guests")
+        : null;
+    if (ambientPoolGuests) {
+      ambientPoolGuests.src = ASSETS.poolGuests;
+      ambientPoolGuests.alt = "Zwei Gäste im leisen Gespräch am Beckenrand";
+    }
     const header = el("header", "local-location-header");
     const close = button("location-back", "‹ Inselkarte", () => {
       overlay.remove();
       void this.render();
     });
     const headerCopy = el("div");
+    const dialogTitle = el("strong", undefined, location.mapLabel);
+    dialogTitle.id = "local-location-title";
     headerCopy.append(
       el("span", "eyebrow", "INSELORT"),
-      el("strong", undefined, location.mapLabel),
+      dialogTitle,
     );
     header.append(close, headerCopy);
 
-    const panel = el("article", "local-location-panel");
+    const activities = this.exploration.activities(this.state, locationId);
+    const visibleActivities = activities.filter(
+      ({ status }) => status.unlocked || status.completed,
+    );
+    const openActivities = visibleActivities.filter(
+      ({ status }) => status.unlocked,
+    ).length;
+    const panel = el("article", "local-location-panel location-story-drawer");
+    const panelHandle = button(
+      "location-story-drawer__handle",
+      openActivities > 0
+        ? `Blick dich um · ${openActivities} ${openActivities === 1 ? "Spur" : "Spuren"}`
+        : "Diesen Ort auf dich wirken lassen",
+      () => {
+        const expanded = panel.classList.toggle("is-open");
+        panelHandle.setAttribute("aria-expanded", String(expanded));
+      },
+    );
+    panelHandle.setAttribute("aria-expanded", "false");
+    const panelContent = el("div", "location-story-drawer__content");
     const title = el("h1", undefined, location.label);
-    title.id = "local-location-title";
-    panel.append(
+    panelContent.append(
       el("span", "eyebrow", "FREI ERKUNDEN"),
       title,
       el("p", "local-location-description", location.description),
@@ -483,63 +546,146 @@ export class Game {
         }),
       );
       missionCard.append(portrait, missionCopy);
-      panel.append(missionCard);
+      panelContent.append(missionCard);
     }
 
-    const activities = this.exploration.activities(this.state, locationId);
-    const activitySection = el("section", "location-activities");
-    activitySection.append(el("h2", undefined, "Hier vor Ort"));
-    for (const { definition, status } of activities) {
-      const card = el(
-        "article",
-        `location-activity${status.completed ? " is-complete" : ""}`,
+    const cue = el("div", "location-story-cue");
+    cue.append(
+      el("span", undefined, "✦"),
+      el(
+        "strong",
+        undefined,
+        visibleActivities.length > 0
+          ? "Tippe leuchtende Details direkt im Bild an"
+          : "Heute wirkt dieser Ort ungewöhnlich ruhig",
+      ),
+    );
+    const hotspotLayer = el("div", "location-story-spots");
+
+    const openStory = (
+      eyebrow: string,
+      heading: string,
+      copy: string,
+      nodes: HTMLElement[] = [],
+    ): void => {
+      panel.classList.add("is-open");
+      panelHandle.setAttribute("aria-expanded", "true");
+      panelContent.replaceChildren(
+        el("span", "eyebrow", eyebrow),
+        el("h2", undefined, heading),
+        el("p", "location-story-copy", copy),
+        ...nodes,
       );
-      const activityCopy = el("div");
-      activityCopy.append(
-        el("strong", undefined, definition.title),
-        el("p", undefined, definition.description),
-      );
-      const activityButton = button(
-        status.completed ? "activity-status" : "secondary-button",
-        status.completed
-          ? "✓ Erledigt"
-          : status.unlocked
-            ? definition.actionLabel
-            : status.reason ?? "Noch gesperrt",
+    };
+
+    for (const { definition, status } of visibleActivities) {
+      const spot = button(
+        `location-story-spot is-${definition.visual.tone}${status.completed ? " is-complete" : ""}`,
+        "",
         () => {
-          try {
-            this.feedback.choice();
-            const result = this.exploration.resolve(this.state, definition.id);
-            this.state = result.state;
-            this.persist();
-            this.renderHud();
-            this.events.emit("toast", definition.resultText);
-            overlay.remove();
-            this.openLocation(locationId);
-          } catch (error) {
-            this.events.emit(
-              "toast",
-              error instanceof Error ? error.message : "Diese Aktion ist gerade nicht möglich.",
-            );
+          this.feedback.tap();
+          const parts = effectParts(definition.effects, true);
+          if (definition.discoveryId) parts.unshift("Neuer Inselhinweis");
+          const effectRow = el("div", "location-story-effects");
+          for (const part of parts) {
+            effectRow.append(el("span", undefined, part));
           }
+          const visual = el("div", "location-story-preview");
+          visual.style.backgroundImage = `url("${location.asset}")`;
+          visual.style.backgroundPosition = `${definition.visual.x}% ${definition.visual.y}%`;
+          visual.append(el("span", undefined, definition.visual.icon));
+
+          if (status.completed) {
+            openStory(
+              "BEREITS ENTDECKT",
+              definition.title,
+              definition.resultText,
+              [
+                visual,
+                ...(parts.length ? [effectRow] : []),
+                el("div", "activity-status", "✓ Diese Spur gehört jetzt zu deiner Inselgeschichte"),
+              ],
+            );
+            return;
+          }
+
+          const action = button(
+            "location-story-action",
+            "",
+            () => {
+              try {
+                this.feedback.choice();
+                const result = this.exploration.resolve(
+                  this.state,
+                  definition.id,
+                );
+                this.state = result.state;
+                this.persist();
+                this.renderHud();
+                status.completed = true;
+                status.unlocked = false;
+                status.reason = "Bereits entdeckt";
+                spot.classList.add("is-complete");
+                spot.querySelector(".location-story-spot__icon")!.textContent =
+                  "✓";
+                spot.querySelector(".location-story-spot__label")!.textContent =
+                  "Entdeckt";
+                this.events.emit("toast", definition.resultText);
+                openStory(
+                  result.discovered
+                    ? "NEUER INSELHINWEIS"
+                    : "MOMENT ABGESCHLOSSEN",
+                  result.activity.title,
+                  result.activity.resultText,
+                  [
+                    visual,
+                    ...(parts.length ? [effectRow] : []),
+                    el("div", "location-story-result", "✓ Im Gedächtnis des Runners gespeichert"),
+                  ],
+                );
+              } catch (error) {
+                this.events.emit(
+                  "toast",
+                  error instanceof Error
+                    ? error.message
+                    : "Diese Aktion ist gerade nicht möglich.",
+                );
+              }
+            },
+          );
+          action.append(
+            el("span", "location-story-action__icon", definition.visual.icon),
+            el("strong", undefined, definition.actionLabel),
+            el("small", undefined, "Diesen Moment ausspielen"),
+          );
+          openStory(
+            "ETWAS FÄLLT DIR AUF",
+            definition.title,
+            definition.description,
+            [visual, ...(parts.length ? [effectRow] : []), action],
+          );
         },
       );
-      activityButton.disabled = !status.unlocked;
-      const effects = el("div", "location-activity__effects");
-      const parts = effectParts(definition.effects, true);
-      if (definition.discoveryId) parts.unshift("⌕ Neuer Hinweis");
-      for (const part of parts) effects.append(el("span", undefined, part));
-      card.append(activityCopy);
-      if (parts.length) card.append(effects);
-      card.append(activityButton);
-      activitySection.append(card);
-    }
-    if (!activities.length) {
-      activitySection.append(
-        el("p", "empty-state", "Hier gibt es im Moment nichts Neues zu entdecken."),
+      spot.style.setProperty("--spot-x", `${definition.visual.x}%`);
+      spot.style.setProperty("--spot-y", `${definition.visual.y}%`);
+      spot.setAttribute(
+        "aria-label",
+        `${definition.title} ${status.completed ? "erneut ansehen" : "untersuchen"}`,
       );
+      spot.append(
+        el(
+          "span",
+          "location-story-spot__icon",
+          status.completed ? "✓" : definition.visual.icon,
+        ),
+        el(
+          "span",
+          "location-story-spot__label",
+          status.completed ? "Entdeckt" : definition.visual.sceneLabel,
+        ),
+      );
+      hotspotLayer.append(spot);
     }
-    panel.append(activitySection);
 
     const locationDiscoveries = this.state.exploration.discoveries.length;
     const footer = el("footer", "location-progress-note");
@@ -551,9 +697,291 @@ export class Game {
         `${this.state.exploration.visitedLocations.length}/${LOCATIONS.length} Orte besucht`,
       ),
     );
-    panel.append(footer);
+    panelContent.append(footer);
+    panel.append(panelHandle, panelContent);
 
-    screen.append(background, shade, header, panel);
+    screen.append(
+      background,
+      shade,
+      ...(ambientPoolGuests ? [ambientPoolGuests] : []),
+      header,
+      cue,
+      hotspotLayer,
+      panel,
+    );
+    overlay.append(screen);
+    this.shell.append(overlay);
+    close.focus();
+  }
+
+  private openPoolScene(): void {
+    if (this.state.activeMission) {
+      this.events.emit("toast", "Der Pool ist zwischen den Aufträgen verfügbar.");
+      return;
+    }
+
+    const visitedState = this.exploration.visit(this.state, "pool");
+    if (visitedState !== this.state) {
+      this.state = visitedState;
+      this.persist();
+    }
+    this.shell.querySelector(".world-overlay")?.remove();
+
+    const overlay = el("div", "world-overlay pool-scene-overlay");
+    const screen = el("section", "pool-social-scene");
+    screen.setAttribute("role", "dialog");
+    screen.setAttribute("aria-modal", "true");
+    screen.setAttribute("aria-labelledby", "pool-scene-title");
+
+    const background = el("img", "pool-scene-background");
+    background.src = ASSETS.pool;
+    background.alt = "Poolterrasse bei Nacht";
+    const shade = el("div", "pool-scene-shade");
+    const guests = el("img", "pool-scene-background-guests");
+    guests.src = ASSETS.poolGuests;
+    guests.alt = "Zwei Gäste im leisen Gespräch am Beckenrand";
+    const header = el("header", "pool-scene-header");
+    const close = button("location-back", "‹ Inselkarte", () => {
+      overlay.remove();
+      void this.render();
+    });
+    const headerCopy = el("div");
+    const title = el("strong", undefined, "POOL · SOCIAL SCENE");
+    title.id = "pool-scene-title";
+    headerCopy.append(el("span", "eyebrow", "FREI ERKUNDEN"), title);
+    header.append(close, headerCopy);
+
+    const actorLayer = el("div", "pool-scene-actors");
+    const hotspotLayer = el("div", "pool-scene-hotspots");
+    const drawer = el("article", "pool-scene-drawer");
+    const drawerHandle = button("pool-scene-drawer__handle", "Szene erkunden", () => {
+      const expanded = drawer.classList.toggle("is-open");
+      drawerHandle.setAttribute("aria-expanded", String(expanded));
+      drawerHandle.textContent = expanded ? "Information einklappen" : "Szene erkunden";
+    });
+    drawerHandle.setAttribute("aria-expanded", "false");
+    const drawerContent = el("div", "pool-scene-drawer__content");
+    drawerContent.append(
+      el("span", "eyebrow", "POOL BEI NACHT"),
+      el("h2", undefined, "Wer ist heute hier?"),
+      el(
+        "p",
+        undefined,
+        "Tippe eine Person oder einen leuchtenden Hinweis direkt in der Szene an.",
+      ),
+    );
+    drawer.append(drawerHandle, drawerContent);
+
+    const openDrawer = (
+      eyebrow: string,
+      heading: string,
+      copy: string,
+      actions: HTMLElement[] = [],
+    ): void => {
+      drawer.classList.add("is-open");
+      drawerHandle.setAttribute("aria-expanded", "true");
+      drawerHandle.textContent = "Information einklappen";
+      drawerContent.replaceChildren(
+        el("span", "eyebrow", eyebrow),
+        el("h2", undefined, heading),
+        el("p", undefined, copy),
+        ...actions,
+      );
+    };
+
+    const actorImages = new Map<CharacterId, HTMLImageElement>();
+    const actors = this.poolScene.actors(this.state);
+    screen.classList.toggle("has-two-actors", actors.length > 1);
+    for (const characterId of actors) {
+      const character = getCharacter(characterId);
+      const actor = button(
+        `pool-scene-character is-${characterId}${actors.length === 1 ? " is-solo" : ""}`,
+        "",
+        () => {
+          this.feedback.tap();
+          const interactions = this.poolScene.interactions(
+            this.state,
+            characterId,
+          );
+          const actions = interactions.map((interaction) => {
+            const choice = button(
+              "pool-scene-choice",
+              "",
+              () => {
+                this.feedback.choice();
+                this.state = this.poolScene.resolve(
+                  this.state,
+                  interaction.id,
+                );
+                this.persist();
+                this.renderHud();
+                const image = actorImages.get(characterId);
+                if (image) {
+                  image.src = poolReactionAsset(
+                    interaction.reaction,
+                    characterId,
+                  );
+                }
+                const effects = effectParts(interaction.effects, true);
+                openDrawer(
+                  "ERINNERUNG GESPEICHERT",
+                  interaction.title,
+                  interaction.result,
+                  effects.length
+                    ? [el("div", "pool-scene-result", effects.join(" · "))]
+                    : [],
+                );
+                actor.classList.toggle(
+                  "has-action",
+                  this.poolScene.interactions(this.state, characterId).length > 0,
+                );
+              },
+            );
+            choice.dataset.poolInteractionId = interaction.id;
+            choice.append(
+              el("strong", undefined, interaction.label),
+              el("span", undefined, interaction.prompt),
+            );
+            return choice;
+          });
+          openDrawer(
+            `GESPRÄCH · ${character.name.toUpperCase()}`,
+            character.name,
+            interactions[0]?.prompt ??
+              `${character.name} genießt den Abend. Für heute habt ihr alles besprochen.`,
+            actions.length
+              ? actions
+              : [el("div", "activity-status", "Alle aktuellen Poolgespräche abgeschlossen")],
+          );
+        },
+      );
+      actor.setAttribute("aria-label", `${character.name} am Pool ansprechen`);
+      actor.dataset.characterId = characterId;
+      actor.classList.toggle(
+        "has-action",
+        this.poolScene.interactions(this.state, characterId).length > 0,
+      );
+      const shadow = el("span", "pool-scene-character__shadow");
+      const image = el("img", "pool-scene-character__image");
+      image.src = poolReactionAsset("neutral", characterId);
+      image.alt = "";
+      actorImages.set(characterId, image);
+      const label = el("span", "pool-scene-character__label");
+      label.append(
+        el("strong", undefined, character.name),
+        el("small", undefined, "ANTIPPEN"),
+      );
+      actor.append(shadow, image, label);
+      actorLayer.append(actor);
+    }
+
+    const poolActivities = this.exploration.activities(this.state, "pool");
+    const addActivityHotspot = (
+      activityId: string,
+      className: string,
+      icon: string,
+      sceneLabel: string,
+      accessibleName: string,
+    ): void => {
+      const item = poolActivities.find(
+        ({ definition }) => definition.id === activityId,
+      );
+      if (!item || (!item.status.unlocked && !item.status.completed)) return;
+      const hotspot = button(
+        `pool-scene-hotspot ${className}${item.status.completed ? " is-complete" : ""}`,
+        icon,
+        () => {
+          this.feedback.tap();
+          const action = item.status.completed
+            ? el("div", "activity-status", "Bereits entdeckt")
+            : button("pool-scene-choice", item.definition.actionLabel, () => {
+                this.feedback.choice();
+                const result = this.exploration.resolve(
+                  this.state,
+                  item.definition.id,
+                );
+                this.state = result.state;
+                this.persist();
+                this.renderHud();
+                hotspot.classList.add("is-complete");
+                openDrawer(
+                  "ORTSHINWEIS GESICHERT",
+                  result.activity.title,
+                  result.activity.resultText,
+                  [
+                    el(
+                      "div",
+                      "pool-scene-result",
+                      effectParts(result.activity.effects, true).join(" · ") ||
+                        "Neuer Inselhinweis",
+                    ),
+                  ],
+                );
+              });
+          openDrawer(
+            "SZENE UNTERSUCHEN",
+            item.definition.title,
+            item.definition.description,
+            [action],
+          );
+        },
+      );
+      hotspot.setAttribute("aria-label", accessibleName);
+      hotspot.append(el("span", "pool-scene-hotspot__label", sceneLabel));
+      hotspotLayer.append(hotspot);
+    };
+    addActivityHotspot(
+      "pool-overhear-afterhours",
+      "is-cabana",
+      "◌",
+      "Leise Stimmen",
+      "Gespräch an der Cabana untersuchen",
+    );
+    addActivityHotspot(
+      "pool-quiet-reset",
+      "is-water",
+      "≈",
+      "Kurz abtauchen",
+      "Poolwasser untersuchen",
+    );
+
+    if (this.poolScene.interactions(this.state, "group").length > 0) {
+      const group = button("pool-scene-hotspot is-group", "♥", () => {
+        const [interaction] = this.poolScene.interactions(this.state, "group");
+        if (!interaction) return;
+        openDrawer(
+          "GEMEINSAME SZENE",
+          interaction.title,
+          interaction.prompt,
+          [
+            button("pool-scene-choice", interaction.label, () => {
+              this.state = this.poolScene.resolve(this.state, interaction.id);
+              this.persist();
+              this.renderHud();
+              openDrawer(
+                "SOZIALES GEDÄCHTNIS",
+                interaction.title,
+                interaction.result,
+              );
+              group.remove();
+            }),
+          ],
+        );
+      });
+      group.setAttribute("aria-label", "Gemeinsame Poolszene starten");
+      group.append(el("span", "pool-scene-hotspot__label", "Gemeinsam"));
+      hotspotLayer.append(group);
+    }
+
+    screen.append(
+      background,
+      shade,
+      guests,
+      header,
+      actorLayer,
+      hotspotLayer,
+      drawer,
+    );
     overlay.append(screen);
     this.shell.append(overlay);
     close.focus();
@@ -923,6 +1351,8 @@ export class Game {
     screen.setAttribute("aria-modal", "true");
     screen.setAttribute("aria-labelledby", "property-title");
 
+    const backdrop = el("div", "property-visual-backdrop");
+    backdrop.style.backgroundImage = `url("${ASSETS.property}")`;
     const visual = el("div", "property-visual");
     visual.style.backgroundImage = `url("${ASSETS.property}")`;
     const header = el("header", "property-header");
@@ -933,7 +1363,15 @@ export class Game {
       void this.render();
     });
     close.setAttribute("aria-label", "Anwesen schließen");
-    header.append(headerCopy, close);
+    const view = button("property-view-toggle", "Bild ansehen", () => {
+      const viewing = screen.classList.toggle("is-viewing");
+      view.textContent = viewing ? "Details zeigen" : "Bild ansehen";
+      view.setAttribute("aria-pressed", String(viewing));
+    });
+    view.setAttribute("aria-pressed", "false");
+    const headerActions = el("div", "property-header__actions");
+    headerActions.append(view, close);
+    header.append(headerCopy, headerActions);
 
     const progress = el("div", "property-progress");
     progress.setAttribute("aria-label", "Ausbaustufen");
@@ -1040,7 +1478,7 @@ export class Game {
       panel.append(complete);
     }
 
-    screen.append(visual, header, progress, panel);
+    screen.append(backdrop, visual, header, progress, panel);
     overlay.append(screen);
     this.shell.append(overlay);
     close.focus();
@@ -1665,7 +2103,7 @@ export class Game {
     this.stage.append(screen);
   }
 
-  private async renderRoute(): Promise<void> {
+  private async renderRoute(epoch: number): Promise<void> {
     const run = this.requireRun();
     const mission = getMission(run.missionId);
     const routes = mission.routeIds.map(getRoute);
@@ -1700,11 +2138,16 @@ export class Game {
     brief.append(cards);
     screen.append(worldHost, brief);
     this.stage.append(screen);
-    this.world = new WorldRenderer(worldHost);
-    await this.world.init("route", routes);
+    const world = new WorldRenderer(worldHost);
+    this.world = world;
+    await world.init("route", routes);
+    if (epoch !== this.renderEpoch || !worldHost.isConnected) {
+      world.destroy();
+      if (this.world === world) this.world = null;
+    }
   }
 
-  private async renderTravel(): Promise<void> {
+  private async renderTravel(epoch: number): Promise<void> {
     const run = this.requireRun();
     if (!run.selectedRoute) throw new Error("Travel scene requires a selected route.");
     const mission = getMission(run.missionId);
@@ -1734,12 +2177,18 @@ export class Game {
     screen.append(worldHost, top, eventPanel);
     this.stage.append(screen);
 
-    this.world = new WorldRenderer(worldHost);
-    await this.world.init("travel", [route]);
+    const world = new WorldRenderer(worldHost);
+    this.world = world;
+    await world.init("travel", [route]);
+    if (epoch !== this.renderEpoch || !worldHost.isConnected) {
+      world.destroy();
+      if (this.world === world) this.world = null;
+      return;
+    }
     let eventTriggered = Boolean(run.selectedTravelChoice);
     if (run.selectedTravelChoice) this.renderResolvedTravelEvent(eventPanel, mission, skip);
 
-    this.world.playRoute(
+    world.playRoute(
       route,
       (progress) => {
         progressFill.style.width = `${Math.round(progress * 100)}%`;
@@ -2155,16 +2604,16 @@ export class Game {
     title.focus();
   }
 
-  private async toggleFullscreen(overlay: HTMLElement): Promise<void> {
+  private async toggleFullscreen(overlay?: HTMLElement): Promise<void> {
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
-        overlay.remove();
+        overlay?.remove();
         this.events.emit("toast", "Vollbild beendet.");
         return;
       }
       if (!document.fullscreenEnabled || !document.documentElement.requestFullscreen) {
-        overlay.remove();
+        overlay?.remove();
         this.events.emit(
           "toast",
           "Auf diesem Gerät: Zum Home-Bildschirm hinzufügen und von dort starten.",
@@ -2174,10 +2623,10 @@ export class Game {
       await document.documentElement.requestFullscreen({
         navigationUI: "hide",
       });
-      overlay.remove();
+      overlay?.remove();
       this.events.emit("toast", "Vollbild aktiv.");
     } catch {
-      overlay.remove();
+      overlay?.remove();
       this.events.emit(
         "toast",
         "Vollbild wurde vom Browser nicht freigegeben.",

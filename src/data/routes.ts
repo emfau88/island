@@ -1,50 +1,115 @@
-import type { RouteDefinition } from "../core/types";
+import type { Point, RouteDefinition } from "../core/types";
 
-const coastSouth = [
-  { x: 1_430, y: 690 },
-  { x: 1_300, y: 830 },
-  { x: 1_100, y: 960 },
-  { x: 880, y: 1_110 },
-  { x: 820, y: 1_300 },
-  { x: 1_020, y: 1_470 },
-  { x: 1_115, y: 1_660 },
-  { x: 1_020, y: 1_890 },
-  { x: 935, y: 2_120 },
-  { x: 955, y: 2_350 },
+function smoothRoad(controlPoints: readonly Point[], passes = 2): Point[] {
+  let points = controlPoints.map((point) => ({ ...point }));
+  for (let pass = 0; pass < passes; pass += 1) {
+    const next: Point[] = [points[0] ?? { x: 0, y: 0 }];
+    for (let index = 0; index < points.length - 1; index += 1) {
+      const current = points[index];
+      const following = points[index + 1];
+      if (!current || !following) continue;
+      next.push(
+        {
+          x: current.x * 0.75 + following.x * 0.25,
+          y: current.y * 0.75 + following.y * 0.25,
+        },
+        {
+          x: current.x * 0.25 + following.x * 0.75,
+          y: current.y * 0.25 + following.y * 0.75,
+        },
+      );
+    }
+    next.push(points.at(-1) ?? { x: 0, y: 0 });
+    points = next;
+  }
+  return points;
+}
+
+const coastSouth = smoothRoad([
+  { x: 1_095, y: 815 },
+  { x: 1_050, y: 875 },
+  { x: 995, y: 930 },
+  { x: 930, y: 980 },
+  { x: 865, y: 1_025 },
+  { x: 815, y: 1_090 },
+  { x: 800, y: 1_170 },
+  { x: 825, y: 1_250 },
+  { x: 880, y: 1_305 },
+  { x: 950, y: 1_345 },
+  { x: 1_025, y: 1_385 },
+  { x: 1_115, y: 1_455 },
+  { x: 1_105, y: 1_535 },
+  { x: 1_045, y: 1_615 },
+  { x: 1_010, y: 1_700 },
+  { x: 1_065, y: 1_790 },
+  { x: 1_115, y: 1_885 },
+  { x: 1_105, y: 1_980 },
+  { x: 1_050, y: 2_075 },
+  { x: 990, y: 2_165 },
+  { x: 975, y: 2_255 },
+  { x: 1_005, y: 2_355 },
+  { x: 1_050, y: 2_455 },
+  { x: 1_040, y: 2_545 },
+  { x: 995, y: 2_630 },
+  { x: 1_015, y: 2_695 },
   { x: 1_065, y: 2_725 },
-];
+]);
 
-const serviceSouth = [
-  { x: 1_430, y: 690 },
-  { x: 1_250, y: 860 },
-  { x: 1_090, y: 1_060 },
-  { x: 1_130, y: 1_310 },
-  { x: 1_170, y: 1_570 },
-  { x: 1_050, y: 1_840 },
-  { x: 960, y: 2_150 },
+const serviceSouth = smoothRoad([
+  { x: 1_205, y: 840 },
+  { x: 1_275, y: 900 },
+  { x: 1_335, y: 980 },
+  { x: 1_375, y: 1_075 },
+  { x: 1_385, y: 1_175 },
+  { x: 1_355, y: 1_270 },
+  { x: 1_300, y: 1_345 },
+  { x: 1_220, y: 1_395 },
+  { x: 1_135, y: 1_430 },
+  { x: 1_095, y: 1_540 },
+  { x: 1_035, y: 1_625 },
+  { x: 1_020, y: 1_715 },
+  { x: 1_080, y: 1_805 },
+  { x: 1_115, y: 1_900 },
+  { x: 1_095, y: 2_000 },
+  { x: 1_035, y: 2_095 },
+  { x: 985, y: 2_190 },
+  { x: 980, y: 2_290 },
+  { x: 1_020, y: 2_390 },
+  { x: 1_050, y: 2_485 },
+  { x: 1_025, y: 2_580 },
+  { x: 995, y: 2_655 },
+  { x: 1_020, y: 2_705 },
   { x: 1_065, y: 2_725 },
-];
+]);
 
-const reverse = (points: { x: number; y: number }[]) => [...points].reverse();
+const reverse = (points: Point[]) => [...points].reverse();
 
-const villaClubTerraces = [
-  { x: 520, y: 520 },
-  { x: 605, y: 585 },
-  { x: 670, y: 690 },
-  { x: 730, y: 805 },
-  { x: 825, y: 905 },
-  { x: 920, y: 985 },
-  { x: 1_025, y: 1_050 },
-];
+const villaClubTerraces = smoothRoad([
+  { x: 750, y: 620 },
+  { x: 820, y: 625 },
+  { x: 885, y: 650 },
+  { x: 935, y: 700 },
+  { x: 965, y: 770 },
+  { x: 955, y: 845 },
+  { x: 915, y: 915 },
+  { x: 865, y: 980 },
+  { x: 825, y: 1_050 },
+  { x: 815, y: 1_120 },
+]);
 
-const villaClubPromenade = [
-  { x: 520, y: 520 },
-  { x: 585, y: 690 },
-  { x: 655, y: 855 },
-  { x: 785, y: 985 },
-  { x: 900, y: 1_035 },
-  { x: 1_025, y: 1_050 },
-];
+const villaClubPromenade = smoothRoad([
+  { x: 750, y: 620 },
+  { x: 825, y: 640 },
+  { x: 895, y: 685 },
+  { x: 955, y: 750 },
+  { x: 1_015, y: 815 },
+  { x: 1_085, y: 860 },
+  { x: 1_165, y: 900 },
+  { x: 1_235, y: 960 },
+  { x: 1_280, y: 1_040 },
+  { x: 1_285, y: 1_120 },
+  { x: 1_245, y: 1_180 },
+]);
 
 export const ROUTES: RouteDefinition[] = [
   {

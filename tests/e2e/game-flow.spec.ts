@@ -108,7 +108,6 @@ test("mobile fullscreen control calls the native fullscreen surface", async ({ p
     });
   });
 
-  await page.getByRole("button", { name: "Menü öffnen" }).click();
   await page.getByRole("button", { name: "Vollbild starten" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-fullscreen-requested", "true");
 });
@@ -119,7 +118,12 @@ test("island landmarks open local exploration and persist discoveries", async ({
 
   await page.getByRole("button", { name: "Pool erkunden" }).click();
   await expect(page.getByRole("dialog", { name: "Pool" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Hier vor Ort" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Blick dich um · 1 Spur" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Das Gespräch am Beckenrand untersuchen" }),
+  ).toBeVisible();
   const locationLayout = await page.evaluate(() => {
     const image = document.querySelector(".local-location-background")?.getBoundingClientRect();
     const panel = document.querySelector(".local-location-panel")?.getBoundingClientRect();
@@ -129,18 +133,34 @@ test("island landmarks open local exploration and persist discoveries", async ({
       viewportHeight: window.innerHeight,
     };
   });
-  expect(locationLayout.imageHeight).toBeGreaterThan(locationLayout.viewportHeight * 0.4);
-  expect(locationLayout.panelTop).toBeGreaterThan(locationLayout.viewportHeight * 0.4);
-  await page.getByRole("button", { name: "Unauffällig zuhören" }).click();
-  await expect(page.getByText("Du kennst jetzt das ruhige Zeitfenster")).toBeVisible();
-  await expect(page.getByRole("button", { name: "✓ Erledigt" })).toBeDisabled();
+  expect(locationLayout.imageHeight).toBeGreaterThan(locationLayout.viewportHeight * 0.9);
+  expect(locationLayout.panelTop).toBeGreaterThan(locationLayout.viewportHeight * 0.8);
+  await page
+    .getByRole("button", { name: "Das Gespräch am Beckenrand untersuchen" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Das Gespräch am Beckenrand" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /Unauffällig zuhören/ }).click();
+  await expect(
+    page
+      .getByRole("dialog", { name: "Pool" })
+      .getByText("Du kennst jetzt das ruhige Zeitfenster"),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Im Gedächtnis des Runners gespeichert"),
+  ).toBeVisible();
   await expect(page.locator(".hud-metric.fans .hud-metric__value")).toHaveText("40");
 
   await page.getByRole("button", { name: "‹ Inselkarte" }).click();
   await page.reload();
   await expect(page.locator('.world-host[data-ready="true"]')).toBeVisible();
   await page.getByRole("button", { name: "Pool erkunden" }).click();
-  await expect(page.getByRole("button", { name: "✓ Erledigt" })).toBeDisabled();
+  await expect(
+    page.getByRole("button", {
+      name: "Das Gespräch am Beckenrand erneut ansehen",
+    }),
+  ).toBeVisible();
 });
 
 test("runner home and Midnight Wing support a gated guest story lifecycle", async ({ page }, testInfo) => {
@@ -202,6 +222,18 @@ test("runner home and Midnight Wing support a gated guest story lifecycle", asyn
     .getByRole("button", { name: "Runner-Home auf Inselkarte öffnen: Runner-Bungalow" })
     .click();
   await expect(page.getByRole("dialog", { name: "Runner-Bungalow" })).toBeVisible();
+  const homeLayout = await page.evaluate(() => {
+    const visual = document.querySelector(".home-hub-visual")?.getBoundingClientRect();
+    const panel = document.querySelector(".home-hub-panel")?.getBoundingClientRect();
+    return {
+      visualWidth: visual?.width ?? 0,
+      visualHeight: visual?.height ?? 0,
+      panelTop: panel?.top ?? 0,
+      viewportHeight: window.innerHeight,
+    };
+  });
+  expect(homeLayout.visualHeight).toBeGreaterThan(homeLayout.visualWidth * 0.95);
+  expect(homeLayout.panelTop).toBeGreaterThan(homeLayout.viewportHeight * 0.38);
   await page.getByRole("button", { name: "Geheimen Bereich prüfen" }).click();
   await expect(page.getByRole("dialog", { name: "Versiegelter Hohlraum" })).toBeVisible();
   await expect(page.getByText("Hinter der Felswand liegt mehr als nur Fundament")).toBeVisible();
@@ -231,6 +263,96 @@ test("runner home and Midnight Wing support a gated guest story lifecycle", asyn
       .filter({ hasText: "Lola" })
       .getByRole("button", { name: "Privat einladen" }),
   ).toBeVisible();
+});
+
+test("pool social scene places characters in the world and persists a direct interaction", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-390", "Canonical pool social scene runs once.");
+  await page.evaluate(() => {
+    window.localStorage.setItem(
+      "island-runner-save",
+      JSON.stringify({
+        version: 5,
+        resources: { cash: 1_200, fans: 1_050, heat: 6 },
+        relationships: {
+          lola: { attraction: 35, trust: 46, mood: 54 },
+          mia: { attraction: 12, trust: 24, mood: 52 },
+        },
+        property: { tier: "bungalow", tutorialSeen: true },
+        social: {
+          lolaMia: { friendship: 45, tension: 10 },
+          memories: [],
+        },
+        exploration: {
+          visitedLocations: [],
+          discoveries: [],
+          completedActions: [],
+        },
+        secretWing: {
+          level: 0,
+          tutorialSeen: false,
+          guests: {
+            lola: { status: "none", completedScenes: [] },
+            mia: { status: "none", completedScenes: [] },
+          },
+        },
+        flags: [
+          "onboarding_complete",
+          "lola_cocktail_complete",
+          "lola_ice_complete",
+          "lola_playlist_complete",
+          "lola_slice_finished",
+          "mia_documents_complete",
+        ],
+        completedMissions: [
+          "lola-cocktail-01",
+          "lola-ice-02",
+          "lola-playlist-03",
+          "mia-documents-01",
+        ],
+        missionStyles: {},
+        messages: [
+          { id: "lola-intro", read: true, unlockedAt: 1, replyId: "intro-reliable" },
+          { id: "lola-after-cocktail", read: true, unlockedAt: 2, replyId: "ice-careful" },
+          { id: "lola-after-ice", read: true, unlockedAt: 3, replyId: "playlist-discreet" },
+          { id: "lola-after-playlist", read: true, unlockedAt: 4, replyId: "ending-loyal" },
+          { id: "mia-intro", read: true, unlockedAt: 5, replyId: "mia-intro-careful" },
+          { id: "mia-after-documents", read: false, unlockedAt: 6 },
+        ],
+        activeMission: null,
+        lastDecision: "Mias Dokumente wurden übergeben.",
+        settings: { sound: false, haptics: false },
+      }),
+    );
+  });
+  await page.reload();
+
+  await page.getByRole("button", { name: "Pool erkunden" }).click();
+  await expect(page.getByRole("dialog", { name: "POOL · SOCIAL SCENE" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Lola am Pool ansprechen" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mia am Pool ansprechen" })).toBeVisible();
+  const poolLolaImage = page.locator(
+    '[data-character-id="lola"] .pool-scene-character__image',
+  );
+  await expect(poolLolaImage).toHaveAttribute(
+    "src",
+    /lola-pool-neutral\.png$/,
+  );
+  await page.screenshot({ path: path.join(screenshots, "14-pool-social-scene.png") });
+
+  await page.getByRole("button", { name: "Lola am Pool ansprechen" }).click();
+  await page.locator('[data-pool-interaction-id="pool-lola-breathe"]').click();
+  await expect(page.getByText("Ihr lasst das Geschäft für einen Moment ruhen")).toBeVisible();
+  await expect(poolLolaImage).toHaveAttribute(
+    "src",
+    /lola-pool-positive\.png$/,
+  );
+  await expect(page.locator(".hud-metric.fans .hud-metric__value")).toHaveText("1.050");
+
+  await page.getByRole("button", { name: "‹ Inselkarte" }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Pool erkunden" }).click();
+  await page.getByRole("button", { name: "Lola am Pool ansprechen" }).click();
+  await expect(page.locator('[data-pool-interaction-id="pool-lola-breathe"]')).toHaveCount(0);
 });
 
 test("all message stages of one contact form a single continuous chat", async ({ page }, testInfo) => {
@@ -445,6 +567,8 @@ test("all three Lola missions and reply gates are playable without a softlock", 
 
   await expect(page.getByRole("heading", { name: "Mia wartet auf dich." })).toBeVisible();
   await expect(page.getByText("Lola sagt, du kannst diskret sein.")).toBeVisible();
+  await expect(page.locator('.world-host[data-renderer="shared"][data-ready="true"]')).toBeVisible();
+  await expect(page.locator(".world-canvas")).not.toHaveAttribute("data-context-lost", "true");
 });
 
 test("Mia mission creates private social memory and a playable bungalow scene", async ({ page }, testInfo) => {

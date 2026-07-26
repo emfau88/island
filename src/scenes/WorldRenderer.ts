@@ -65,7 +65,9 @@ function samplePath(points: Point[], progress: number): { point: Point; heading:
 }
 
 export class WorldRenderer {
-  private readonly app = new Application();
+  private static sharedApp: Application | null = null;
+  private static sharedAppPromise: Promise<Application> | null = null;
+  private app: Application | null = null;
   private readonly world = new Container();
   private readonly routeLayer = new Container();
   private readonly pinLayer = new Container();
@@ -82,6 +84,7 @@ export class WorldRenderer {
   private totalPaused = 0;
   private landmarkButtons: HTMLButtonElement[] = [];
   private options: WorldRendererOptions = {};
+  private destroyed = false;
 
   public constructor(private readonly host: HTMLElement) {
     this.resizeObserver = new ResizeObserver(() => this.layout());
@@ -94,23 +97,18 @@ export class WorldRenderer {
   ): Promise<void> {
     this.mode = mode;
     this.options = options;
-    await this.app.init({
-      resizeTo: this.host,
-      backgroundColor: 0x02070d,
-      backgroundAlpha: 1,
-      antialias: true,
-      autoDensity: true,
-      resolution: Math.min(window.devicePixelRatio, 2),
-    });
-    this.app.canvas.className = "world-canvas";
-    this.app.canvas.setAttribute("aria-label", "Interaktive Inselkarte");
-    this.host.append(this.app.canvas);
-    this.app.stage.addChild(this.world);
-
     const [worldTexture, carTexture] = await Promise.all([
       Assets.load<Texture>(ASSETS.world),
       Assets.load<Texture>(ASSETS.car),
     ]);
+    const app = await WorldRenderer.acquireApplication();
+    if (this.destroyed) return;
+    this.app = app;
+    app.canvas.className = "world-canvas";
+    app.canvas.setAttribute("aria-label", "Interaktive Inselkarte");
+    this.host.append(app.canvas);
+    app.stage.addChild(this.world);
+
     const map = new Sprite(worldTexture);
     map.width = WORLD_WIDTH;
     map.height = WORLD_HEIGHT;
@@ -131,6 +129,7 @@ export class WorldRenderer {
     this.resizeObserver.observe(this.host);
     this.layout();
     this.host.dataset.ready = "true";
+    this.host.dataset.renderer = "shared";
   }
 
   public playRoute(
@@ -138,8 +137,12 @@ export class WorldRenderer {
     onProgress: (progress: number) => void,
     onDone: () => void,
   ): void {
+    const app = this.app;
     if (!this.car || !this.carShadow) {
       throw new Error("WorldRenderer must be initialized in travel mode.");
+    }
+    if (!app) {
+      throw new Error("WorldRenderer has no active application.");
     }
     const started = performance.now();
     let finished = false;
@@ -150,7 +153,7 @@ export class WorldRenderer {
     this.currentPoint = initial.point;
     this.car.position.set(initial.point.x, initial.point.y);
     this.car.rotation = initial.heading + Math.PI / 2;
-    this.carShadow.position.set(initial.point.x + 14, initial.point.y + 24);
+    this.carShadow.position.set(initial.point.x + 8, initial.point.y + 14);
     this.carShadow.rotation = initial.heading + Math.PI / 2;
     const finish = () => {
       if (finished) {
@@ -158,7 +161,7 @@ export class WorldRenderer {
       }
       finished = true;
       if (this.tickerHandler) {
-        this.app.ticker.remove(this.tickerHandler);
+        app.ticker.remove(this.tickerHandler);
         this.tickerHandler = null;
       }
       this.routePaused = false;
@@ -175,7 +178,7 @@ export class WorldRenderer {
       const sample = samplePath(route.points, eased);
       this.currentPoint = sample.point;
       this.car?.position.set(sample.point.x, sample.point.y);
-      this.carShadow?.position.set(sample.point.x + 14, sample.point.y + 24);
+      this.carShadow?.position.set(sample.point.x + 8, sample.point.y + 14);
       if (this.car) {
         this.car.rotation = sample.heading + Math.PI / 2;
       }
@@ -188,7 +191,7 @@ export class WorldRenderer {
         finish();
       }
     };
-    this.app.ticker.add(this.tickerHandler);
+    app.ticker.add(this.tickerHandler);
   }
 
   public pause(): void {
@@ -209,13 +212,46 @@ export class WorldRenderer {
   }
 
   public destroy(): void {
+    if (this.destroyed) return;
+    this.destroyed = true;
     this.resizeObserver.disconnect();
-    if (this.tickerHandler) {
+    if (this.tickerHandler && this.app) {
       this.app.ticker.remove(this.tickerHandler);
     }
     for (const button of this.landmarkButtons) button.remove();
     this.landmarkButtons = [];
-    this.app.destroy(true);
+    this.world.removeFromParent();
+    this.world.destroy({ children: true });
+    if (this.app?.canvas.parentElement === this.host) {
+      this.app.canvas.remove();
+    }
+    this.app = null;
+  }
+
+  private static async acquireApplication(): Promise<Application> {
+    if (WorldRenderer.sharedApp) return WorldRenderer.sharedApp;
+    if (!WorldRenderer.sharedAppPromise) {
+      const app = new Application();
+      WorldRenderer.sharedAppPromise = app
+        .init({
+          backgroundColor: 0x02070d,
+          backgroundAlpha: 1,
+          antialias: true,
+          autoDensity: true,
+          resolution: Math.min(window.devicePixelRatio, 2),
+        })
+        .then(() => {
+          app.canvas.addEventListener("webglcontextlost", () => {
+            app.canvas.dataset.contextLost = "true";
+          });
+          app.canvas.addEventListener("webglcontextrestored", () => {
+            delete app.canvas.dataset.contextLost;
+          });
+          WorldRenderer.sharedApp = app;
+          return app;
+        });
+    }
+    return WorldRenderer.sharedAppPromise;
   }
 
   private addRoute(route: RouteDefinition, color: number): void {
@@ -316,19 +352,22 @@ export class WorldRenderer {
 
   private addVehicle(texture: Texture): void {
     this.carShadow = new Graphics()
-      .ellipse(0, 0, 52, 82)
+      .ellipse(0, 0, 34, 54)
       .fill({ color: 0x000000, alpha: 0.42 });
     this.carShadow.pivot.set(0, 0);
     this.car = new Sprite(texture);
     this.car.anchor.set(0.5);
-    this.car.width = 128;
-    this.car.height = 128;
+    this.car.width = 82;
+    this.car.height = 82;
     this.vehicleLayer.addChild(this.carShadow, this.car);
   }
 
   private layout(): void {
-    const width = Math.max(1, this.app.screen.width);
-    const height = Math.max(1, this.app.screen.height);
+    if (!this.app || this.destroyed) return;
+    const bounds = this.host.getBoundingClientRect();
+    const width = Math.max(1, Math.round(bounds.width));
+    const height = Math.max(1, Math.round(bounds.height));
+    this.app.renderer.resize(width, height);
     if (this.mode === "travel") {
       const scale = Math.max(width / 760, height / 1_140);
       this.world.scale.set(scale);

@@ -20,6 +20,13 @@ export interface LocationActivityDefinition {
   discoveryId?: string;
   completionFlags?: string[];
   social?: SocialConsequences;
+  visual: {
+    icon: string;
+    sceneLabel: string;
+    x: number;
+    y: number;
+    tone: "cyan" | "pink" | "amber" | "violet" | "green";
+  };
 }
 
 export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
@@ -36,6 +43,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     minimumMissions: 0,
     discoveryId: "pool_afterhours_pattern",
     completionFlags: ["pool_afterhours_known"],
+    visual: {
+      icon: "◌",
+      sceneLabel: "Leise Stimmen",
+      x: 22,
+      y: 42,
+      tone: "violet",
+    },
   },
   {
     id: "pool-quiet-reset",
@@ -48,6 +62,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     requiredFlags: [],
     requiredDiscoveries: [],
     minimumMissions: 1,
+    visual: {
+      icon: "≈",
+      sceneLabel: "Kurz abtauchen",
+      x: 69,
+      y: 56,
+      tone: "cyan",
+    },
   },
   {
     id: "yacht-private-manifest",
@@ -62,6 +83,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     minimumMissions: 1,
     discoveryId: "unlisted_yacht_departure",
     completionFlags: ["unlisted_yacht_known"],
+    visual: {
+      icon: "≋",
+      sceneLabel: "Anlegerbuch",
+      x: 29,
+      y: 61,
+      tone: "cyan",
+    },
   },
   {
     id: "yacht-cooler-cache",
@@ -75,6 +103,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     requiredDiscoveries: [],
     minimumMissions: 1,
     completionFlags: ["yacht_supply_cache"],
+    visual: {
+      icon: "▣",
+      sceneLabel: "Servicefach",
+      x: 73,
+      y: 69,
+      tone: "green",
+    },
   },
   {
     id: "villa-foundation-plan",
@@ -89,6 +124,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     minimumMissions: 3,
     discoveryId: "hidden_foundation_plan",
     completionFlags: ["midnight_foundation_known"],
+    visual: {
+      icon: "⌕",
+      sceneLabel: "Lose Verkleidung",
+      x: 27,
+      y: 63,
+      tone: "violet",
+    },
   },
   {
     id: "villa-guest-pattern",
@@ -103,6 +145,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     requiredDiscoveries: [],
     minimumMissions: 3,
     discoveryId: "villa_discreet_entry",
+    visual: {
+      icon: "◈",
+      sceneLabel: "Drei Zugänge",
+      x: 74,
+      y: 48,
+      tone: "amber",
+    },
   },
   {
     id: "club-vip-door",
@@ -117,6 +166,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     minimumMissions: 3,
     discoveryId: "club_vip_door",
     completionFlags: ["club_vip_access_known"],
+    visual: {
+      icon: "◇",
+      sceneLabel: "Seitentür",
+      x: 77,
+      y: 46,
+      tone: "pink",
+    },
   },
   {
     id: "club-quiet-booth",
@@ -130,6 +186,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     requiredDiscoveries: ["club_vip_door"],
     minimumMissions: 3,
     completionFlags: ["club_quiet_booth_reserved"],
+    visual: {
+      icon: "◒",
+      sceneLabel: "Stille Nische",
+      x: 31,
+      y: 63,
+      tone: "violet",
+    },
   },
   {
     id: "bar-bartender-rumor",
@@ -144,6 +207,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     minimumMissions: 2,
     discoveryId: "dock_night_delivery",
     completionFlags: ["dock_delivery_tip"],
+    visual: {
+      icon: "♢",
+      sceneLabel: "Barkeeper",
+      x: 36,
+      y: 47,
+      tone: "amber",
+    },
   },
   {
     id: "bar-lay-low",
@@ -156,6 +226,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     requiredFlags: [],
     requiredDiscoveries: [],
     minimumMissions: 1,
+    visual: {
+      icon: "◐",
+      sceneLabel: "Hinterer Tisch",
+      x: 72,
+      y: 63,
+      tone: "green",
+    },
   },
   {
     id: "dock-sealed-crate",
@@ -170,6 +247,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     minimumMissions: 2,
     discoveryId: "mia_crate_symbol",
     completionFlags: ["mia_crate_symbol_known"],
+    visual: {
+      icon: "⬡",
+      sceneLabel: "Fremdes Siegel",
+      x: 67,
+      y: 61,
+      tone: "violet",
+    },
   },
   {
     id: "dock-runner-kit",
@@ -183,6 +267,13 @@ export const LOCATION_ACTIVITIES: readonly LocationActivityDefinition[] = [
     requiredDiscoveries: [],
     minimumMissions: 1,
     completionFlags: ["dock_runner_cache"],
+    visual: {
+      icon: "▣",
+      sceneLabel: "Freie Kiste",
+      x: 27,
+      y: 69,
+      tone: "cyan",
+    },
   },
 ] as const;
 
